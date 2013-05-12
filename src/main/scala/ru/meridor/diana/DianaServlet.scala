@@ -2,16 +2,29 @@ package ru.meridor.diana
 
 import org.scalatra._
 import scalate.ScalateSupport
+import org.slf4j.LoggerFactory
+import ru.meridor.diana.db.SlickSupport
+import ru.meridor.diana.db.FlywaySupport
 
-class DianaServlet extends DianaStack {
-
+class DianaServlet extends DianaStack with SlickSupport with FlywaySupport {
+  
+  private val logger = LoggerFactory.getLogger(this.getClass)
+  
+  logger.info("Starting application...")
+  
+  logger.info("Initializing routes...")
   get("/") {
     <html>
       <body>
-        <h1>Hello, world!</h1>
-        Say <a href="hello-scalate">hello to Scalate</a>.
+        <h1>Diana works!</h1>
       </body>
     </html>
+  }
+  
+  private def renderView(viewName: String, attributes: (String, Any)*): String = {
+    logger.info("Rendering view \"" + viewName + "\"...")
+    contentType = "text/html"
+    jade(viewName, attributes:_*)
   }
   
 }

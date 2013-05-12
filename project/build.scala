@@ -25,12 +25,13 @@ object DianaBuild extends Build {
         "org.scalatra" %% "scalatra" % ScalatraVersion,
         "org.scalatra" %% "scalatra-scalate" % ScalatraVersion,
         "org.scalatra" %% "scalatra-specs2" % ScalatraVersion % "test",
-        "ch.qos.logback" % "logback-classic" % "1.0.6" % "runtime",
+        "ch.qos.logback" % "logback-classic" % "1.0.0" % "runtime",
         "org.eclipse.jetty" % "jetty-webapp" % "8.1.8.v20121106" % "container",
         "org.eclipse.jetty.orbit" % "javax.servlet" % "3.0.0.v201112011016" % "container;provided;test" artifacts (Artifact("javax.servlet", "jar", "jar")),
         "com.jolbox" % "bonecp" % "0.8.0-rc1",
         "com.typesafe.slick" % "slick_2.10" % "1.0.0",
-        "com.googlecode.flyway" % "flyway-maven-plugin" % "2.1.1"
+        "com.googlecode.flyway" % "flyway-core" % "2.1.1",
+        "mysql" % "mysql-connector-java" % "5.1.24"
       ),
       scalateTemplateConfig in Compile <<= (sourceDirectory in Compile){ base =>
         Seq(
@@ -43,7 +44,9 @@ object DianaBuild extends Build {
             Some("templates")
           )
         )
-      }
+      },
+      sourceDirectories in Compile <+= (resourceDirectory in Compile) { _ / "db" / "migration" / "java" },
+      unmanagedResourceDirectories in Compile <+= (resourceDirectory in Compile) { _ / "db" / "migration" / "sql" }
     )
   )
 }
