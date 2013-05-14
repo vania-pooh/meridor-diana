@@ -1,7 +1,5 @@
 package ru.meridor.diana
 
-import org.scalatra._
-import scalate.ScalateSupport
 import org.slf4j.LoggerFactory
 import ru.meridor.diana.db.SlickSupport
 import ru.meridor.diana.db.FlywaySupport

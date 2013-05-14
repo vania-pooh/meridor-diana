@@ -46,7 +46,7 @@ object DianaBuild extends Build {
         )
       },
       sourceDirectories in Compile <+= (resourceDirectory in Compile) { _ / "db" / "migration" / "java" },
-      unmanagedResourceDirectories in Compile <+= (resourceDirectory in Compile) { _ / "db" / "migration" / "sql" }
+      sourceDirectories in Compile <+= (resourceDirectory in Compile) { _ / "db" / "migration" / "sql" }
     )
   )
 }
