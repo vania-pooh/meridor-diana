@@ -7,22 +7,49 @@ import ru.meridor.diana.db.FlywaySupport
 class DianaServlet extends DianaStack with SlickSupport with FlywaySupport {
   
   private val logger = LoggerFactory.getLogger(this.getClass)
-  
-  logger.info("Starting application...")
-  
-  logger.info("Initializing routes...")
-  get("/") {
-    <html>
-      <body>
-        <h1>Diana works!</h1>
-      </body>
-    </html>
+
+  /**
+   * Actions to be done when starting application
+   */
+  override def init(){
+    logger.info("Starting application...")
+    super.init()
+    migrateDatabase()
+    initRoutes()
   }
-  
+
+  /**
+   * Actions to be done when shutting down application
+   */
+  override def destroy() {
+    super.destroy()
+    shutdownConnectionPooler()
+  }
+
+  /**
+   * Initializes application routes
+   */
+  private def initRoutes(){
+    logger.info("Initializing routes...")
+    get("/") {
+      <html>
+        <body>
+          <h1>Diana works!</h1>
+        </body>
+      </html>
+    }
+  }
+
+  /**
+   * Renders a single application view
+   * @param viewName
+   * @param attributes
+   * @return
+   */
   private def renderView(viewName: String, attributes: (String, Any)*): String = {
     logger.info("Rendering view \"" + viewName + "\"...")
     contentType = "text/html"
     jade(viewName, attributes:_*)
   }
-  
+
 }

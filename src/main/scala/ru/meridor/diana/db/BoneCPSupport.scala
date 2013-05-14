@@ -9,12 +9,15 @@ import java.util.Properties
 import com.jolbox.bonecp.BoneCPDataSource
 
 /**
- * Delivers basic Slick and BoneCP support
+ * Delivers basic BoneCP support
  */
-trait BoneCPSupport extends ScalatraServlet {
+trait BoneCPSupport {
   
   private val logger = LoggerFactory.getLogger(this.getClass)
 
+  /**
+   * Provides connection pooler datasource object. Call cpds.getConnection() to get JDBC connection.
+   */
   val cpds = {
     logger.info("Loading database properties...")
     val props = new Properties
@@ -27,14 +30,9 @@ trait BoneCPSupport extends ScalatraServlet {
   }
 
   /**
-   * Connection pooler will be automatically shut down on servlet destroy
+   * Shuts down connection pool. Is expected to be called when application finishes its work (e.g. on servlet destroy).
    */
-  override def destroy() {
-    super.destroy()
-    shutdownConnectionPooler
-  }
-  
-  def shutdownConnectionPooler() {
+  protected def shutdownConnectionPooler() {
     logger.info("Shutting down BoneCP connection pool...")
     cpds.close
   }
