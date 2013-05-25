@@ -3,7 +3,7 @@
  */
 package ru.meridor.diana.db
 
-import scala.slick.driver.MySQLDriver.simple._
+import scala.slick.driver.PostgresDriver.simple._
 
 /**
  * Adds Slick query compiler support 

@@ -3,10 +3,10 @@
  */
 package ru.meridor.diana.db
 
-import org.scalatra.ScalatraServlet
 import org.slf4j.LoggerFactory
 import java.util.Properties
 import com.jolbox.bonecp.BoneCPDataSource
+import java.sql.Connection
 
 /**
  * Delivers basic BoneCP support
@@ -22,7 +22,6 @@ trait BoneCPSupport {
     logger.info("Loading database properties...")
     val props = new Properties
     props.load(getClass.getResourceAsStream("/bonecp.properties"))
-    Class.forName("com.mysql.jdbc.Driver")
     val cpds = new BoneCPDataSource
     cpds.setProperties(props)
     logger.info("Initialized BoneCP connection pool.")
@@ -37,4 +36,13 @@ trait BoneCPSupport {
     cpds.close
   }
 
+  /**
+   * Tries to close JDBC connection
+   * @param connection
+   */
+  protected def closeConnection(connection: Connection){
+    if ( (connection != null) && !connection.isClosed ){
+      connection.close()
+    }
+  }
 }
