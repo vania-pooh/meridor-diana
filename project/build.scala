@@ -32,7 +32,8 @@ object DianaBuild extends Build {
         "com.typesafe.slick" % "slick_2.10" % "1.0.0",
         "com.googlecode.flyway" % "flyway-core" % "2.1.1",
         "postgresql" % "postgresql" % "9.1-901-1.jdbc4",
-        "org.apache.commons" % "commons-io" % "1.3.2"
+        "org.apache.commons" % "commons-io" % "1.3.2",
+        "org.apache.commons" % "commons-lang3" % "3.1"
       ),
       scalateTemplateConfig in Compile <<= (sourceDirectory in Compile){ base =>
         Seq(
