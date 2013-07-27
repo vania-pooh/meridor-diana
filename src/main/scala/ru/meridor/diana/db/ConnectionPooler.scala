@@ -3,22 +3,27 @@
  */
 package ru.meridor.diana.db
 
-import org.slf4j.LoggerFactory
 import java.util.Properties
 import com.jolbox.bonecp.BoneCPDataSource
 import java.sql.Connection
+import ru.meridor.diana.log.LoggingSupport
 
 /**
- * Delivers basic BoneCP support
+ * Delivers basic connection pooler support
  */
-trait BoneCPSupport {
+trait ConnectionPoolerSupport extends LoggingSupport {
   
-  private val logger = LoggerFactory.getLogger(this.getClass)
+  def getDataSource = ConnectionPooler.getDataSource
 
-  /**
-   * Provides connection pooler datasource object. Call cpds.getConnection() to get JDBC connection.
-   */
-  val cpds = {
+  def getConnection = ConnectionPooler.getConnection
+}
+
+/**
+ * An object to access database from any class
+ */
+object ConnectionPooler extends LoggingSupport{
+
+  private val cpds = {
     logger.info("Loading database properties...")
     val props = new Properties
     props.load(getClass.getResourceAsStream("/bonecp.properties"))
@@ -29,20 +34,33 @@ trait BoneCPSupport {
   }
 
   /**
+   * Returns connection pooler data source
+   * @return
+   */
+  def getDataSource = cpds
+
+  /**
    * Shuts down connection pool. Is expected to be called when application finishes its work (e.g. on servlet destroy).
    */
-  protected def shutdownConnectionPooler() {
+  def shutdown() {
     logger.info("Shutting down BoneCP connection pool...")
-    cpds.close
+    getDataSource.close()
   }
+
+  /**
+   * Returns a single database connection
+   * @return
+   */
+  def getConnection = getDataSource.getConnection
 
   /**
    * Tries to close JDBC connection
    * @param connection
    */
-  protected def closeConnection(connection: Connection){
+  def closeConnection(connection: Connection){
     if ( (connection != null) && !connection.isClosed ){
       connection.close()
     }
   }
+
 }

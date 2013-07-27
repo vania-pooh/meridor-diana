@@ -1,0 +1,1 @@
+This package contains one-to-one representation of the database tables via Slick table objects.

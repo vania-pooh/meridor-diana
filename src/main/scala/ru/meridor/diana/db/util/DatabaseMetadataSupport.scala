@@ -1,13 +1,13 @@
 package ru.meridor.diana.db.util
 
-import ru.meridor.diana.db.BoneCPSupport
+import ru.meridor.diana.db.{ConnectionPooler, ConnectionPoolerSupport}
 import java.sql.{Connection, DatabaseMetaData}
 import scala.collection.mutable.{ListBuffer, Map, LinkedList}
 
 /**
  * Adds support for retrieving database metadata
  */
-trait DatabaseMetadataSupport extends BoneCPSupport {
+trait DatabaseMetadataSupport extends ConnectionPoolerSupport {
   /**
    * Stores database connection instance
    */
@@ -27,7 +27,7 @@ trait DatabaseMetadataSupport extends BoneCPSupport {
           )
         )
     }
-    closeConnection(connection)
+    ConnectionPooler.closeConnection(connection)
     return ret
   }
 
@@ -38,7 +38,7 @@ trait DatabaseMetadataSupport extends BoneCPSupport {
       val tableName = tablesListResult.getString("TABLE_NAME")
       ret ++= (if (!excludedTablesList.contains(tableName)) List(tableName) else Nil)
     }
-    closeConnection(connection)
+    ConnectionPooler.closeConnection(connection)
     return ret.toList
   }
 
@@ -71,13 +71,13 @@ trait DatabaseMetadataSupport extends BoneCPSupport {
 
   private def getForeignKeysList(tableName: String): List[ForeignKey] = {
     val foreignKeys = ListBuffer[ForeignKey]()
-    val foreignKeysResultSet = getDatabaseMetadata().getCrossReference(null, null, tableName, null, null, null)
+    val foreignKeysResultSet = getDatabaseMetadata().getCrossReference(null, null, null, null, null, tableName)
     val foreignKeysData = Map[String, (List[String], String, List[String])]()
     while(foreignKeysResultSet.next()){
       val name = foreignKeysResultSet.getString("FK_NAME")
-      val fromColumnName = foreignKeysResultSet.getString("PKCOLUMN_NAME")
-      val toTableName = foreignKeysResultSet.getString("FKTABLE_NAME")
-      val toColumnName = foreignKeysResultSet.getString("FKCOLUMN_NAME")
+      val fromColumnName = foreignKeysResultSet.getString("FKCOLUMN_NAME")
+      val toTableName = foreignKeysResultSet.getString("PKTABLE_NAME")
+      val toColumnName = foreignKeysResultSet.getString("PKCOLUMN_NAME")
       if (!foreignKeysData.contains(name)){
         foreignKeysData += (name -> (List[String](fromColumnName), toTableName, List[String](toColumnName)))
       }else{
@@ -120,7 +120,7 @@ trait DatabaseMetadataSupport extends BoneCPSupport {
 
   private def getDatabaseMetadata(): DatabaseMetaData = {
     if ( (connection == null) || connection.isClosed ) {
-      connection = cpds.getConnection
+      connection = ConnectionPooler.getConnection
     }
     return connection.getMetaData
   }

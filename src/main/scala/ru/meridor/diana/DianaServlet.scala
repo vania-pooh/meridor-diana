@@ -1,13 +1,12 @@
 package ru.meridor.diana
 
-import org.slf4j.LoggerFactory
-import ru.meridor.diana.db.SlickSupport
-import ru.meridor.diana.db.FlywaySupport
+import ru.meridor.diana.db.{ConnectionPooler, FlywaySupport}
+import ru.meridor.diana.log.LoggingSupport
 
-class DianaServlet extends DianaStack with SlickSupport with FlywaySupport {
+class DianaServlet extends DianaStack
+  with FlywaySupport
+  with LoggingSupport {
   
-  private val logger = LoggerFactory.getLogger(this.getClass)
-
   /**
    * Actions to be done when starting application
    */
@@ -23,7 +22,7 @@ class DianaServlet extends DianaStack with SlickSupport with FlywaySupport {
    */
   override def destroy() {
     super.destroy()
-    shutdownConnectionPooler()
+    ConnectionPooler.shutdown()
   }
 
   /**

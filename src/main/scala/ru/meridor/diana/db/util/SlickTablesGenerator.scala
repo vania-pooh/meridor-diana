@@ -1,6 +1,7 @@
 package ru.meridor.diana.db.util
 
 import ru.meridor.diana.util.{CamelCaseSupport, FileGenerationSupport}
+import ru.meridor.diana.db.ConnectionPooler
 
 /**
  * A standalone executable for generating Slick table classes from database structure
@@ -31,9 +32,11 @@ object SlickTablesGenerator extends App with DatabaseMetadataSupport with FileGe
       append(table.toSlickString())
       writeToFile(outputDirectory, underscoredToCamelCase(tableName) + ".scala")
     }
+    ConnectionPooler.shutdown()
   }
 
   private def appendImportStatements(){
+    appendln("package ru.meridor.diana.db.tables")
     appendln()
     appendln("import scala.slick.driver.PostgresDriver.simple._")
     appendln("import java.sql.Timestamp")

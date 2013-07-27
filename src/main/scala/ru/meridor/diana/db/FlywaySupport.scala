@@ -3,18 +3,13 @@
  */
 package ru.meridor.diana.db
 
-import org.slf4j.LoggerFactory
 import com.googlecode.flyway.core.Flyway
+import ru.meridor.diana.log.LoggingSupport
 
 /**
  * Adds Flyway migrations support
  */
-trait FlywaySupport extends BoneCPSupport {
-  /**
-   * Logger instance
-   */
-  private val logger = LoggerFactory.getLogger(this.getClass)
-
+trait FlywaySupport extends ConnectionPoolerSupport with LoggingSupport {
   /**
    * Flyway migration instance
    */
@@ -33,7 +28,7 @@ trait FlywaySupport extends BoneCPSupport {
    */
   protected def migrateDatabase(){
     logger.info("Checking whether we need to apply new database migrations...")
-    flyway.setDataSource(cpds)
+    flyway.setDataSource(getDataSource)
     if (databaseNeedsMigration()){
       logger.info("Migrating database...")
       flyway.setEncoding("UTF8")
