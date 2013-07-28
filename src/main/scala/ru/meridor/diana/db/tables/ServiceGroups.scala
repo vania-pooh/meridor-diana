@@ -6,10 +6,12 @@ package ru.meridor.diana.db.tables
 import scala.slick.driver.PostgresDriver.simple._
 import java.sql.Timestamp
 
-object ServiceGroups extends Table[(Int, String, Int)]("service_groups") {
+object ServiceGroups extends Table[(Int, String, Int, String)]("service_groups") {
   def groupId = column[Int]("group_id", O.NotNull, O.AutoInc)
   def groupName = column[String]("group_name", O.NotNull)
   def sequence = column[Int]("sequence", O.NotNull)
-  def * = groupId ~ groupName ~ sequence
+  def displayName = column[String]("display_name")
+  def * = groupId ~ groupName ~ sequence ~ displayName
+  def idxServiceGroupsGroupName = index("idx_service_groups_group_name", (groupName))
   def serviceGroupsPkey = index("service_groups_pkey", (groupId), unique = true)
 }

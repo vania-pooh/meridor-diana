@@ -11,13 +11,13 @@ import scala.slick.session.Database.threadLocalSession
  */
 case class Service(id: Long, displayName: String, price: Double, unitOfMeasure: UnitOfMeasure, group: ServiceGroup) extends EqualsById[Service, Long]{
 
-  private def this(data: (Long, String, Double, Int, String, Int, String, Int)) =
+  private def this(data: (Long, String, Double, Int, String, Int, String, String, Int)) =
     this(
       data._1,
       data._2,
       data._3,
       new UnitOfMeasure(data._4, data._5),
-      new ServiceGroup(data._6, data._7, data._8)
+      new ServiceGroup(data._6, data._7, data._8, data._9)
     )
 
   def getId = id
@@ -36,7 +36,7 @@ object Service{
         s <- Services if s.serviceId === id
         u <- s.fkServicesUnits
         g <- s.fkServicesServiceGroups
-      } yield (s.serviceId, s.serviceName, s.price, u.unitId, u.displayName, g.groupId, g.groupName, g.sequence)
+      } yield (s.serviceId, s.serviceName, s.price, u.unitId, u.displayName, g.groupId, g.groupName, g.displayName, g.sequence)
       val records = rawRecords.list
       return if (records.size > 0)
         Some(new Service(records(0)))
@@ -45,27 +45,31 @@ object Service{
     None
   }
 
-  def getByGroups(groups: List[ServiceGroup]): Map[ServiceGroup, List[Service]] = {
-    val groupIds = for {group <- groups} yield group.getId
-    val map = scala.collection.mutable.Map[ServiceGroup, List[Service]]()
+  def getByGroups(groupNames: List[String]): Map[ServiceGroup, List[Service]] = {
     DB withSession {
       val rawRecords = for {
-        s <- Services if s.groupId inSetBind groupIds
+        s <- Services
         u <- s.fkServicesUnits
-        g <- s.fkServicesServiceGroups
-      } yield (s.serviceId, s.serviceName, s.price, u.unitId, u.displayName, g.groupId, g.groupName, g.sequence)
+        g <- s.fkServicesServiceGroups if g.groupName inSetBind groupNames
+      } yield (s.serviceId, s.serviceName, s.price, u.unitId, u.displayName, g.groupId, g.groupName, g.displayName, g.sequence)
       val records = rawRecords.list
       if (records.size > 0){
+        val map = scala.collection.mutable.Map[ServiceGroup, List[Service]]()
         val services = records map (r => new Service(r))
+        val groups = services.map(r => r.getGroup).distinct
         for (group <- groups){
-          map + (group -> (services filter (_.getGroup == group)) )
+          map += (group -> (services filter (_.getGroup == group)) )
         }
+        return map.toMap[ServiceGroup, List[Service]]
       }
     }
-    map.toMap[ServiceGroup, List[Service]]
+    Map[ServiceGroup, List[Service]]()
   }
 
-  def getByGroup(group: ServiceGroup): List[Service] = getByGroups(List(group))(group)
+  def getByGroup(groupName: String): List[Service] = {
+    val map = getByGroups(List(groupName))
+    if (map.size > 0) map(map.head._1) else List[Service]()
+  }
 
   def getByUnitOfMeasure(unitOfMeasure: UnitOfMeasure): List[Service] = {
     DB withSession {
@@ -73,7 +77,7 @@ object Service{
         s <- Services if s.unitId === unitOfMeasure.getId
         u <- s.fkServicesUnits
         g <- s.fkServicesServiceGroups
-      } yield (s.serviceId, s.serviceName, s.price, u.unitId, u.displayName, g.groupId, g.groupName, g.sequence)
+      } yield (s.serviceId, s.serviceName, s.price, u.unitId, u.displayName, g.groupId, g.groupName, g.displayName, g.sequence)
       val records = rawRecords.list
       return if (records.size > 0)
         records.map(r => new Service(r))
