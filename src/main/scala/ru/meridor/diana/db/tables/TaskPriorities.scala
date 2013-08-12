@@ -11,5 +11,8 @@ object TaskPriorities extends Table[(Int, String, String)]("task_priorities") {
   def priorityName = column[String]("priority_name", O.NotNull)
   def icon = column[String]("icon")
   def * = priorityId ~ priorityName ~ icon
+  def withAutoInc = priorityName ~ icon returning priorityId
+  def onlyRequired = priorityId ~ priorityName ~ icon.?
+  def pk = primaryKey("task_priorities_pkey", (priorityId))
   def taskPrioritiesPkey = index("task_priorities_pkey", (priorityId), unique = true)
 }

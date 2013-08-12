@@ -18,6 +18,9 @@ object Tasks extends Table[(Long, Timestamp, Timestamp, String, Int, Int, Int, I
   def duration = column[Double]("duration")
   def created = column[Timestamp]("created", O.NotNull)
   def * = taskId ~ startDate ~ endDate ~ description ~ categoryId ~ priorityId ~ statusId ~ paidAmount ~ duration ~ created
+  def withAutoInc = startDate ~ endDate ~ description ~ categoryId ~ priorityId ~ statusId ~ paidAmount ~ duration ~ created returning taskId
+  def onlyRequired = taskId ~ startDate ~ endDate.? ~ description ~ categoryId ~ priorityId ~ statusId ~ paidAmount ~ duration.? ~ created
+  def pk = primaryKey("tasks_pkey", (taskId))
   def fkTasksTaskPriorities = foreignKey("fk_tasks_task_priorities", (priorityId), TaskPriorities)(t => (t.priorityId))
   def fkTasksTaskStatuses = foreignKey("fk_tasks_task_statuses", (statusId), TaskStatuses)(t => (t.statusId))
   def fkTasksTaskCategories = foreignKey("fk_tasks_task_categories", (categoryId), TaskCategories)(t => (t.categoryId))

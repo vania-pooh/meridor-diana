@@ -11,5 +11,8 @@ object TaskCategories extends Table[(Int, String, String)]("task_categories") {
   def categoryName = column[String]("category_name", O.NotNull)
   def icon = column[String]("icon")
   def * = categoryId ~ categoryName ~ icon
+  def withAutoInc = categoryName ~ icon returning categoryId
+  def onlyRequired = categoryId ~ categoryName ~ icon.?
+  def pk = primaryKey("task_categories_pkey", (categoryId))
   def taskCategoriesPkey = index("task_categories_pkey", (categoryId), unique = true)
 }

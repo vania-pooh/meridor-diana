@@ -11,6 +11,8 @@ object TaskServices extends Table[(Long, Long, Double)]("task_services") {
   def serviceId = column[Long]("service_id", O.NotNull)
   def quantity = column[Double]("quantity", O.NotNull)
   def * = taskId ~ serviceId ~ quantity
+  def onlyRequired = taskId ~ serviceId ~ quantity
+  def pk = primaryKey("", ())
   def fkTaskServicesTasks = foreignKey("fk_task_services_tasks", (taskId), Tasks)(t => (t.taskId))
   def fkTaskServicesServices = foreignKey("fk_task_services_services", (serviceId), Services)(t => (t.serviceId))
   def idxTaskServicesServices = index("idx_task_services_services", (serviceId))

@@ -7,7 +7,7 @@ import scala.slick.driver.PostgresDriver.simple._
 import java.sql.Timestamp
 
 object Organizations extends Table[(Long, String, String, String, String, String, String, String, String, Long, Long, Int, String, Int, Long, Long, String)]("organizations") {
-  def contactId = column[Long]("contact_id", O.NotNull, O.AutoInc)
+  def contactId = column[Long]("contact_id", O.NotNull)
   def title = column[String]("title", O.NotNull)
   def ceoName = column[String]("ceo_name")
   def phone = column[String]("phone", O.NotNull)
@@ -25,6 +25,9 @@ object Organizations extends Table[(Long, String, String, String, String, String
   def settlementAccount = column[Long]("settlement_account", O.NotNull)
   def misc = column[String]("misc")
   def * = contactId ~ title ~ ceoName ~ phone ~ fax ~ website ~ email ~ registrationAddress ~ postalAddress ~ ogrn ~ inn ~ kpp ~ bankName ~ bik ~ correspondentAccount ~ settlementAccount ~ misc
+  def onlyRequired = contactId ~ title ~ ceoName.? ~ phone ~ fax.? ~ website.? ~ email.? ~ registrationAddress ~ postalAddress.? ~ ogrn.? ~ inn ~ kpp ~ bankName ~ bik ~ correspondentAccount ~ settlementAccount ~ misc.?
+  def pk = primaryKey("organizations_pkey", (inn))
   def fkOrganizationsContacts = foreignKey("fk_organizations_contacts", (contactId), Contacts)(t => (t.contactId))
   def idxOrganizationsContacts = index("idx_organizations_contacts", (contactId))
+  def organizationsPkey = index("organizations_pkey", (inn), unique = true)
 }

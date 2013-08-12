@@ -11,5 +11,8 @@ object TaskStatuses extends Table[(Int, String, String)]("task_statuses") {
   def statusName = column[String]("status_name", O.NotNull)
   def icon = column[String]("icon")
   def * = statusId ~ statusName ~ icon
+  def withAutoInc = statusName ~ icon returning statusId
+  def onlyRequired = statusId ~ statusName ~ icon.?
+  def pk = primaryKey("task_statuses_pkey", (statusId))
   def taskStatusesPkey = index("task_statuses_pkey", (statusId), unique = true)
 }

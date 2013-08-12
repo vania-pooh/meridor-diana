@@ -14,6 +14,9 @@ object TaskTemplates extends Table[(Long, String, String, Int, Int, Int)]("task_
   def priorityId = column[Int]("priority_id", O.NotNull)
   def statusId = column[Int]("status_id", O.NotNull)
   def * = templateId ~ templateName ~ description ~ categoryId ~ priorityId ~ statusId
+  def withAutoInc = templateName ~ description ~ categoryId ~ priorityId ~ statusId returning templateId
+  def onlyRequired = templateId ~ templateName ~ description ~ categoryId ~ priorityId ~ statusId
+  def pk = primaryKey("task_templates_pkey", (templateId))
   def fkTaskTemplatesTaskCategories = foreignKey("fk_task_templates_task_categories", (categoryId), TaskCategories)(t => (t.categoryId))
   def fkTaskTemplatesTaskStatuses = foreignKey("fk_task_templates_task_statuses", (statusId), TaskStatuses)(t => (t.statusId))
   def fkTaskTemplatesTaskPriorities = foreignKey("fk_task_templates_task_priorities", (priorityId), TaskPriorities)(t => (t.priorityId))

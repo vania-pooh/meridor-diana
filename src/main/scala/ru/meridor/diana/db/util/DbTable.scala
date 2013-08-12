@@ -23,7 +23,15 @@ class DbTable (name: String, columns: List[DbColumn], primaryKey: PrimaryKey, fo
       }
       appendln(getWildcardRow())
 
+      val autoIncrementColumns = columns.filter(_.getAutoIncrement)
+      if (autoIncrementColumns.length == 1){
+        appendln(getAutoIncrementHelperRow(autoIncrementColumns.head, columns))
+      }
+
+      appendln(getOnlyRequiredHelperRow(columns))
+
       //Adding primary key
+      appendln(primaryKey.toSlickString())
 
       //Adding foreign keys
       for (foreignKey <- foreignKeys){
@@ -48,4 +56,22 @@ class DbTable (name: String, columns: List[DbColumn], primaryKey: PrimaryKey, fo
   private def getWildcardRow(): String = {
     return "def * = " + columns.mkString(" ~ ")
   }
+
+  private def getAutoIncrementHelperRow(autoIncColumn: DbColumn, columns: List[DbColumn]): String = {
+    return "def withAutoInc = " +
+      columns.filter(!_.getAutoIncrement).mkString(" ~ ") +
+      " returning " + autoIncColumn
+  }
+
+  private def getOnlyRequiredHelperRow(columns: List[DbColumn]): String = {
+    return "def onlyRequired = " +
+    columns.map(
+      c => c.getNullable match {
+        case true => c + ".?"
+        case false => c
+      }
+    )
+    .mkString(" ~ ")
+  }
+
 }

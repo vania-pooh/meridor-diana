@@ -12,6 +12,9 @@ object Users extends Table[(Int, String, String, Long)]("users") {
   def password = column[String]("password", O.NotNull)
   def contactId = column[Long]("contact_id")
   def * = userId ~ email ~ password ~ contactId
+  def withAutoInc = email ~ password ~ contactId returning userId
+  def onlyRequired = userId ~ email ~ password ~ contactId.?
+  def pk = primaryKey("users_pkey", (userId))
   def fkUsersContacts = foreignKey("fk_users_contacts", (contactId), Contacts)(t => (t.contactId))
   def usersPkey = index("users_pkey", (userId), unique = true)
   def usersEmailKey = index("users_email_key", (email), unique = true)

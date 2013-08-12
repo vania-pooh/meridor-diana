@@ -6,8 +6,8 @@ package ru.meridor.diana.db.tables
 import scala.slick.driver.PostgresDriver.simple._
 import java.sql.Timestamp
 
-object Persons extends Table[(Long, String, String, String, String, Long, Long, String, String, String, Int, String, Int, String)]("persons") {
-  def contactId = column[Long]("contact_id", O.NotNull, O.AutoInc)
+object Persons extends Table[(Long, String, String, String, String, Long, Long, String, String, String, Int, String, Double, String)]("persons") {
+  def contactId = column[Long]("contact_id", O.NotNull)
   def firstName = column[String]("first_name", O.NotNull)
   def middleName = column[String]("middle_name")
   def lastName = column[String]("last_name")
@@ -15,14 +15,16 @@ object Persons extends Table[(Long, String, String, String, String, Long, Long, 
   def cellPhone = column[Long]("cell_phone", O.NotNull)
   def fixedPhone = column[Long]("fixed_phone")
   def passport = column[String]("passport")
-  def address = column[String]("address", O.NotNull)
+  def address = column[String]("address")
   def district = column[String]("district")
   def age = column[Int]("age")
   def profession = column[String]("profession")
-  def averagePayment = column[Int]("average_payment")
+  def averagePayment = column[Double]("average_payment")
   def misc = column[String]("misc")
   def * = contactId ~ firstName ~ middleName ~ lastName ~ position ~ cellPhone ~ fixedPhone ~ passport ~ address ~ district ~ age ~ profession ~ averagePayment ~ misc
+  def onlyRequired = contactId ~ firstName ~ middleName.? ~ lastName.? ~ position.? ~ cellPhone ~ fixedPhone.? ~ passport.? ~ address.? ~ district.? ~ age.? ~ profession.? ~ averagePayment.? ~ misc.?
+  def pk = primaryKey("persons_pkey", (cellPhone))
   def fkPersonsContacts = foreignKey("fk_persons_contacts", (contactId), Contacts)(t => (t.contactId))
   def idxPersonsContacts = index("idx_persons_contacts", (contactId))
-  def personsPkey = index("persons_pkey", (contactId), unique = true)
+  def personsPkey = index("persons_pkey", (cellPhone), unique = true)
 }

@@ -13,27 +13,27 @@ class DbColumn(
                 defaultValue: Any = null
 ) extends SlickConvertible{
 
-  override def toString: String = underscoredToCamelCase(name, true)
+  override def toString = underscoredToCamelCase(name, lcFirst = true)
 
-  def getDatabaseName: String = name
+  def getDatabaseName = name
 
-  def getJavaType: String = {
-    return getColumnJavaType(sqlType, size)
-  }
+  def getAutoIncrement = autoIncrement
+
+  def getJavaType = getColumnJavaType(sqlType, size)
+
+  def getNullable = nullable
 
   /**
    * Returns a slick table definition string
    * @return
    */
-  def toSlickString(): String = {
-    return "def " + underscoredToCamelCase(name, true) +
-      " = column[" + getJavaType + "]" +
-      "(" +
-        "\"" + getDatabaseName + "\"" +
-        (if (nullable) "" else ", O.NotNull") +
-        (if (autoIncrement) ", O.AutoInc" else "") +
+  def toSlickString(): String = "def " + underscoredToCamelCase(name, lcFirst = true) +
+    " = column[" + getJavaType + "]" +
+    "(" +
+      "\"" + getDatabaseName + "\"" +
+      (if (nullable) "" else ", O.NotNull") +
+      (if (autoIncrement) ", O.AutoInc" else "") +
 //TODO: implement default value support
 //        (if (defaultValue != null) ", O.Default[" + getJavaType + "](" + getValueEscapeSymbol(getJavaType) + defaultValue + getValueEscapeSymbol(getJavaType) + ")" else "") +
-      ")"
-  }
+    ")"
 }

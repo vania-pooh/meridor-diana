@@ -13,6 +13,9 @@ object Services extends Table[(Long, String, Int, Double, Int)]("services") {
   def price = column[Double]("price", O.NotNull)
   def groupId = column[Int]("group_id")
   def * = serviceId ~ serviceName ~ unitId ~ price ~ groupId
+  def withAutoInc = serviceName ~ unitId ~ price ~ groupId returning serviceId
+  def onlyRequired = serviceId ~ serviceName ~ unitId ~ price ~ groupId.?
+  def pk = primaryKey("services_pkey", (serviceId))
   def fkServicesUnits = foreignKey("fk_services_units", (unitId), Units)(t => (t.unitId))
   def fkServicesServiceGroups = foreignKey("fk_services_service_groups", (groupId), ServiceGroups)(t => (t.groupId))
   def servicesPkey = index("services_pkey", (serviceId), unique = true)
