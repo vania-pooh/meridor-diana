@@ -10,7 +10,6 @@ object UserRoles extends Table[(Int, Int)]("user_roles") {
   def roleId = column[Int]("role_id", O.NotNull)
   def userId = column[Int]("user_id", O.NotNull)
   def * = roleId ~ userId
-  def onlyRequired = roleId ~ userId
   def pk = primaryKey("user_roles_pkey", (roleId, userId))
   def fkUserRolesUsers = foreignKey("fk_user_roles_users", (userId), Users)(t => (t.userId))
   def fkUserRolesRoles = foreignKey("fk_user_roles_roles", (roleId), Roles)(t => (t.roleId))

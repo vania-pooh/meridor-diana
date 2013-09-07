@@ -63,7 +63,10 @@ object Contact extends Entity[Contact, Long]{
         }
       }
     } catch {
-      case _: Exception => None
+      case e: Exception => {
+        e.printStackTrace()
+        None
+      }
     }
   }
 
@@ -79,7 +82,10 @@ object Contact extends Entity[Contact, Long]{
         Some(new Contact(Some(contactId), contact.contactType, contact.numRequests, contact.created))
       }
     } catch {
-      case _: Exception => None
+      case e: Exception => {
+        e.printStackTrace()
+        None
+      }
     }
   }
 
@@ -139,18 +145,18 @@ object Person extends Entity[Person, Long]{
               case Some(contact) => Some(new Person(
                 Some(contact),
                 record._2,
-                Some(record._3),
-                Some(record._4),
-                Some(record._5),
+                record._3,
+                record._4,
+                record._5,
                 record._6,
-                Some(record._7),
-                Some(record._8),
-                Some(record._9),
-                Some(record._10),
-                Some(record._11),
-                Some(record._12),
-                Some(record._13),
-                Some(record._14)
+                record._7,
+                record._8,
+                record._9,
+                record._10,
+                record._11,
+                record._12,
+                record._13,
+                record._14
               ))
               case None => None
             }
@@ -158,7 +164,10 @@ object Person extends Entity[Person, Long]{
         }
       }
     } catch {
-      case _: Exception => None
+      case e: Exception => {
+        e.printStackTrace()
+        None
+      }
     }
   }
 
@@ -174,7 +183,7 @@ object Person extends Entity[Person, Long]{
         contact match {
           case Some(ct) => ct.id match {
             case Some(id) => {
-              Persons.onlyRequired.insert((
+              Persons.insert((
                 id,
                 person.firstName,
                 person.middleName,
@@ -214,7 +223,10 @@ object Person extends Entity[Person, Long]{
         }
       }
     } catch {
-      case _: Exception => None
+      case e: Exception => {
+        e.printStackTrace()
+        None
+      }
     }
   }
 

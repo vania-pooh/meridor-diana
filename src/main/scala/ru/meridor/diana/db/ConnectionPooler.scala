@@ -23,7 +23,7 @@ trait ConnectionPoolerSupport extends LoggingSupport {
  */
 object ConnectionPooler extends LoggingSupport{
 
-  private val cpds = {
+  private lazy val cpds = {
     logger.info("Loading database properties...")
     val props = new Properties
     props.load(getClass.getResourceAsStream("/bonecp.properties"))
@@ -51,7 +51,12 @@ object ConnectionPooler extends LoggingSupport{
    * Returns a single database connection
    * @return
    */
-  def getConnection = getDataSource.getConnection
+  def getConnection = {
+    logger.debug("Getting connection from the pool...")
+    val connection = getDataSource.getConnection
+    logger.debug("Got instance " + connection + ".")
+    connection
+  }
 
   /**
    * Tries to close JDBC connection
@@ -59,6 +64,7 @@ object ConnectionPooler extends LoggingSupport{
    */
   def closeConnection(connection: Connection){
     if ( (connection != null) && !connection.isClosed ){
+      logger.debug("Closing connection instance " + connection + "...")
       connection.close()
     }
   }

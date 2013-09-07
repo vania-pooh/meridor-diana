@@ -15,16 +15,20 @@ trait JSONPostRequestSupport {
   private lazy val httpClient = new DefaultHttpClient()
 
   private def getRequestJSON(requestParameters: Map[String, Any]): String = {
-    return JSONObject(requestParameters).toString()
+    import org.json4s.jackson.Json
+    import org.json4s.DefaultFormats
+    Json(DefaultFormats).write(requestParameters)
   }
 
   private def processRequest(url: String, requestParameters: String): String =
     if ( (url != null) && (requestParameters != null) ){
       val post = new HttpPost(url)
       post.setHeader("User-Agent", USER_AGENT)
+      post.setHeader("Accept", "application/json")
+      post.setHeader("Content-type", "application/json")
       post.setEntity(new StringEntity(requestParameters, Consts.UTF_8))
       val response = httpClient.execute(post)
-      val rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()))
+      val rd = new BufferedReader(new InputStreamReader(response.getEntity.getContent))
 
       val result = new StringBuffer()
       var line = ""

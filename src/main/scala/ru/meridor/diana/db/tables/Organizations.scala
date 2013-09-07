@@ -6,26 +6,25 @@ package ru.meridor.diana.db.tables
 import scala.slick.driver.PostgresDriver.simple._
 import java.sql.Timestamp
 
-object Organizations extends Table[(Long, String, String, String, String, String, String, String, String, Long, Long, Int, String, Int, Long, Long, String)]("organizations") {
+object Organizations extends Table[(Long, String, Option[String], String, Option[String], Option[String], Option[String], String, Option[String], Option[Long], Long, Int, String, Int, Long, Long, Option[String])]("organizations") {
   def contactId = column[Long]("contact_id", O.NotNull)
   def title = column[String]("title", O.NotNull)
-  def ceoName = column[String]("ceo_name")
+  def ceoName = column[Option[String]]("ceo_name", O.Nullable)
   def phone = column[String]("phone", O.NotNull)
-  def fax = column[String]("fax")
-  def website = column[String]("website")
-  def email = column[String]("email")
+  def fax = column[Option[String]]("fax", O.Nullable)
+  def website = column[Option[String]]("website", O.Nullable)
+  def email = column[Option[String]]("email", O.Nullable)
   def registrationAddress = column[String]("registration_address", O.NotNull)
-  def postalAddress = column[String]("postal_address")
-  def ogrn = column[Long]("ogrn")
+  def postalAddress = column[Option[String]]("postal_address", O.Nullable)
+  def ogrn = column[Option[Long]]("ogrn", O.Nullable)
   def inn = column[Long]("inn", O.NotNull)
   def kpp = column[Int]("kpp", O.NotNull)
   def bankName = column[String]("bank_name", O.NotNull)
   def bik = column[Int]("bik", O.NotNull)
   def correspondentAccount = column[Long]("correspondent_account", O.NotNull)
   def settlementAccount = column[Long]("settlement_account", O.NotNull)
-  def misc = column[String]("misc")
+  def misc = column[Option[String]]("misc", O.Nullable)
   def * = contactId ~ title ~ ceoName ~ phone ~ fax ~ website ~ email ~ registrationAddress ~ postalAddress ~ ogrn ~ inn ~ kpp ~ bankName ~ bik ~ correspondentAccount ~ settlementAccount ~ misc
-  def onlyRequired = contactId ~ title ~ ceoName.? ~ phone ~ fax.? ~ website.? ~ email.? ~ registrationAddress ~ postalAddress.? ~ ogrn.? ~ inn ~ kpp ~ bankName ~ bik ~ correspondentAccount ~ settlementAccount ~ misc.?
   def pk = primaryKey("organizations_pkey", (inn))
   def fkOrganizationsContacts = foreignKey("fk_organizations_contacts", (contactId), Contacts)(t => (t.contactId))
   def idxOrganizationsContacts = index("idx_organizations_contacts", (contactId))

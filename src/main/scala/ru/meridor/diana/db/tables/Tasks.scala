@@ -6,20 +6,19 @@ package ru.meridor.diana.db.tables
 import scala.slick.driver.PostgresDriver.simple._
 import java.sql.Timestamp
 
-object Tasks extends Table[(Long, Timestamp, Timestamp, String, Int, Int, Int, Int, Double, Timestamp)]("tasks") {
+object Tasks extends Table[(Long, Timestamp, Option[Timestamp], String, Int, Int, Int, Int, Option[Double], Timestamp)]("tasks") {
   def taskId = column[Long]("task_id", O.NotNull, O.AutoInc)
   def startDate = column[Timestamp]("start_date", O.NotNull)
-  def endDate = column[Timestamp]("end_date")
+  def endDate = column[Option[Timestamp]]("end_date", O.Nullable)
   def description = column[String]("description", O.NotNull)
   def categoryId = column[Int]("category_id", O.NotNull)
   def priorityId = column[Int]("priority_id", O.NotNull)
   def statusId = column[Int]("status_id", O.NotNull)
   def paidAmount = column[Int]("paid_amount", O.NotNull)
-  def duration = column[Double]("duration")
+  def duration = column[Option[Double]]("duration", O.Nullable)
   def created = column[Timestamp]("created", O.NotNull)
   def * = taskId ~ startDate ~ endDate ~ description ~ categoryId ~ priorityId ~ statusId ~ paidAmount ~ duration ~ created
   def withAutoInc = startDate ~ endDate ~ description ~ categoryId ~ priorityId ~ statusId ~ paidAmount ~ duration ~ created returning taskId
-  def onlyRequired = taskId ~ startDate ~ endDate.? ~ description ~ categoryId ~ priorityId ~ statusId ~ paidAmount ~ duration.? ~ created
   def pk = primaryKey("tasks_pkey", (taskId))
   def fkTasksTaskPriorities = foreignKey("fk_tasks_task_priorities", (priorityId), TaskPriorities)(t => (t.priorityId))
   def fkTasksTaskStatuses = foreignKey("fk_tasks_task_statuses", (statusId), TaskStatuses)(t => (t.statusId))

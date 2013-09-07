@@ -28,7 +28,7 @@ class DbTable (name: String, columns: List[DbColumn], primaryKey: PrimaryKey, fo
         appendln(getAutoIncrementHelperRow(autoIncrementColumns.head, columns))
       }
 
-      appendln(getOnlyRequiredHelperRow(columns))
+//      appendln(getOnlyRequiredHelperRow(columns))
 
       //Adding primary key
       appendln(primaryKey.toSlickString())
@@ -50,7 +50,10 @@ class DbTable (name: String, columns: List[DbColumn], primaryKey: PrimaryKey, fo
   }
 
   private def getRecordType(): String = {
-    return "(" + columns.map(column => column.getJavaType).mkString(", ") + ")"
+    return "(" + columns.map(
+      column =>
+        (if (column.getNullable) "Option[" + column.getJavaType + "]" else column.getJavaType)
+    ).mkString(", ") + ")"
   }
 
   private def getWildcardRow(): String = {
@@ -63,15 +66,15 @@ class DbTable (name: String, columns: List[DbColumn], primaryKey: PrimaryKey, fo
       " returning " + autoIncColumn
   }
 
-  private def getOnlyRequiredHelperRow(columns: List[DbColumn]): String = {
-    return "def onlyRequired = " +
-    columns.map(
-      c => c.getNullable match {
-        case true => c + ".?"
-        case false => c
-      }
-    )
-    .mkString(" ~ ")
-  }
+//  private def getOnlyRequiredHelperRow(columns: List[DbColumn]): String = {
+//    return "def onlyRequired = " +
+//    columns.map(
+//      c => c.getNullable match {
+//        case true => c + ".?"
+//        case false => c
+//      }
+//    )
+//    .mkString(" ~ ")
+//  }
 
 }

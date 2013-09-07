@@ -1,39 +1,62 @@
 package ru.meridor.diana.notification.strategies
 
 import java.util.{Date, Properties}
-import ru.meridor.diana.util.JSONPostRequestSupport
+import ru.meridor.diana.util.{PropertiesFileSupport, JSONPostRequestSupport}
 import ru.meridor.diana.notification.entities.SMSNotification
 import org.joda.time.DateTime
 
 /**
+ * Case class storing two lists - accepted and rejected messages
+ * @param acceptedMessages
+ * @param rejectedMessages
+ */
+case class AcceptedRejectedMessages(acceptedMessages: List[SMSNotification], rejectedMessages: List[SMSNotification])
+
+object IQSMSGate {
+
+  private lazy val gateInstance = new IQSMSGate
+
+  def sendMessages(msgs: List[SMSNotification]): AcceptedRejectedMessages = gateInstance.sendMessages(messages = msgs)
+
+  def getAvailableMessagesNumber: Double = gateInstance.getBalance
+
+  def haveEnoughAccountMoney = gateInstance.haveEnoughAccountMoney
+
+  def getSenders: List[String] = gateInstance.getSenders
+}
+
+/**
  * Encapsulates http://iqsms.ru/ JSON API for sending SMS
  */
-class IQSMSGate extends JSONPostRequestSupport {
+class IQSMSGate extends JSONPostRequestSupport with PropertiesFileSupport {
+
+  private val STATUS_OK = "ok"
+  private val SMS_ACCEPTED = "accepted"
+
   /**
-   * Stores SMS notification properties
+   * SMS notification properties
    */
-  private val properties = {
-    val props = new Properties
-    props.load(getClass.getResourceAsStream("/iqsms.properties"))
-    props
+
+  protected def propertiesFileName: String = "/iqsms.properties"
+
+  private def getBaseUrl: String = getPropertyOrEmptyString("sms.url")
+  private def getLogin: String = getPropertyOrEmptyString("sms.login")
+  private def getPassword: String = getPropertyOrEmptyString("sms.password")
+
+  private def getPropertyOrEmptyString(name: String): String = getProperty(name) match {
+    case Some(str) => str
+    case None => ""
   }
 
-  private def getBaseUrl(): String = getProperty("sms.url")
-  private def getLogin(): String = getProperty("sms.login")
-  private def getPassword(): String = getProperty("sms.password")
-  private def getProperty(name: String): String = if (properties.get(name) != null)
-    properties.get(name).toString
-  else ""
+  private def canProcessRequests: Boolean = (getBaseUrl.size > 0) && (getLogin.size > 0) && (getPassword.size > 0)
 
-  private def canProcessRequests() = (getBaseUrl().size > 0) && (getLogin().size > 0) && (getPassword().size > 0)
+  private def getUrl(uri: String): String = getBaseUrl + uri + ".json"
 
-  private def getUrl(uri: String): String = getBaseUrl() + "/" + uri + "/"
+  private def getDefaultRequestParameters: Map[String, Any] =
+    Map[String, Any]("login" -> getLogin, "password" -> getPassword)
 
-  private def getDefaultRequestParameters(): Map[String, Any] =
-    Map[String, Any]("login" -> getLogin(), "password" -> getPassword())
-
-  private def isRequestSuccessful(response: Map[String, Any]): Boolean = response("status") match {
-    case Some(status) => (status == "ok")
+  private def isRequestSuccessful(response: Map[String, Any]): Boolean = response.get("status") match {
+    case Some(status) => status == STATUS_OK
     case None => false
   }
 
@@ -46,55 +69,114 @@ class IQSMSGate extends JSONPostRequestSupport {
    */
   def sendMessages(
       messages: List[SMSNotification],
-      statusQueueName: String = "defaultMessagesQueue",
+      statusQueueName: Option[String] = None,
       scheduleTime: Option[Date] = None
-  ): Boolean =
+  ): AcceptedRejectedMessages =
     if (messages.size > 0) {
-      val requestParameters = scala.collection.mutable.Map() ++ getDefaultRequestParameters()
-      requestParameters ++ Set("statusQueueName" -> statusQueueName)
-      scheduleTime match {
-        case Some(time) => requestParameters ++ Set("scheduleTime" -> new DateTime(time).toString())
+
+      val requestParameters = scala.collection.mutable.Map[String, Any]()
+      requestParameters ++= getDefaultRequestParameters
+      statusQueueName match {
+        case Some(name) => requestParameters += ("statusQueueName" -> name)
         case None => ()
       }
+      scheduleTime match {
+        case Some(time) => requestParameters += ("scheduleTime" -> new DateTime(time).toString())
+        case None => ()
+      }
+
+      var messagesList = List[Map[String, Any]]()
       for (message <- messages){
-        val messageParameters = scala.collection.mutable.Set(
-          "clientId" -> message.getId,
-          "phone" -> message.getPhone,
-          "text" -> message.getMessage,
-          "sender" -> message.getSender
+        messagesList ::= Map(
+          "clientId" -> message.id,
+          "phone" -> ("+7" + message.phone.toString), //IQSMS requires +7 to be included
+          "text" -> message.message,
+          "sender" -> message.sender
         )
-        if (message.isFlash){
-          messageParameters ++ Seq("flash" -> 1)
+      }
+      requestParameters += ("messages" -> messagesList)
+
+      val response = sendRequest(getUrl("send"), requestParameters.toMap[String, Any])
+      if (isRequestSuccessful(response)){
+          response.get("messages") match {
+            case Some(processedMessages) => classifyProcessedMessages(messages, processedMessages.asInstanceOf[List[Map[String, Any]]])
+            case None => allMessagesRejected(messages)
+          }
+      } else allMessagesRejected(messages)
+    } else noMessagesSent
+
+  private def noMessagesSent = new AcceptedRejectedMessages(List.empty[SMSNotification], List.empty[SMSNotification])
+  private def allMessagesRejected(messages: List[SMSNotification]) = new AcceptedRejectedMessages(List.empty[SMSNotification], messages)
+
+  private def classifyProcessedMessages(messages: List[SMSNotification], processedMessages: List[Map[String, Any]]): AcceptedRejectedMessages = {
+    var acceptedMessages = List[SMSNotification]()
+    var rejectedMessages = List[SMSNotification]()
+    for (processedMessage <- processedMessages){
+      val clientId = processedMessage("clientId").asInstanceOf[Double].longValue
+      val status = processedMessage("status")
+      status match {
+        case SMS_ACCEPTED => getMessageById(messages, clientId) match {
+            case Some(msg) => acceptedMessages ::= msg
+            case None => ()
+          }
+        case _ => getMessageById(messages, clientId) match {
+          case Some(msg) => rejectedMessages ::= msg
+          case None => ()
         }
       }
-      val response = sendRequest(getUrl("send"), requestParameters.toMap[String, Any])
-      return true
-    } else false
+    }
+    new AcceptedRejectedMessages(acceptedMessages.toList, rejectedMessages.toList)
+  }
 
+  private def getMessageById(messages: List[SMSNotification], id: Long): Option[SMSNotification] = {
+    val filteredMessages = messages.filter(_.id == id)
+    filteredMessages.size match {
+      case 0 => None
+      case _ => Some(filteredMessages.head)
+    }
+  }
   /**
-   * Returns total amount of money on account
+   * Returns total amount of messages that can be sent with current money amount
    * @return
    */
-  def getAccountBalance(): Double = {
-    val response = sendRequest(getUrl("credits"), getDefaultRequestParameters())
+  def getBalance: Double = {
+    val response = sendRequest(getUrl("balance"), getDefaultRequestParameters)
     response.size match {
-      case 2 => if (isRequestSuccessful(response))
-        response("credits").asInstanceOf[Double] else 0d
+      case 2 => if (isRequestSuccessful(response)){
+        val balanceDataList = response("balance").asInstanceOf[List[Map[String, Any]]]
+        val firstBalanceRecord = balanceDataList(0)
+        firstBalanceRecord("balance").asInstanceOf[Double]
+      }
+      else 0d
       case _ => 0d
     }
   }
 
   /**
+   * Depending on selected package a single SMS can cost up to this price
+   */
+  val SMS_MAX_PRICE = 0.5
+
+  /**
+   * Returns whether we have enough money to send messages
+   * @return
+   */
+  def haveEnoughAccountMoney = getBalance > SMS_MAX_PRICE
+
+  /**
    * Returns a list of available message senders
    * @return
    */
-  def getSenders(): List[String] = {
-    val response = sendRequest(getUrl("senders"), getDefaultRequestParameters())
+  def getSenders: List[String] = {
+    val response = sendRequest(getUrl("senders"), getDefaultRequestParameters)
     response.size match {
       case 2 => if (isRequestSuccessful(response))
         response("senders").asInstanceOf[List[String]] else List.empty[String]
       case _ => List.empty[String]
     }
   }
+
+  protected override def sendRequest(url: String, requestParameters: Map[String, Any]): Map[String, Any] =
+    if (canProcessRequests) super.sendRequest(url, requestParameters) else Map.empty[String, Any]
 
 }

@@ -13,7 +13,6 @@ object Requests extends Table[(Long, Long, Long, Long)]("requests") {
   def taskId = column[Long]("task_id", O.NotNull)
   def * = requestId ~ clientId ~ executorId ~ taskId
   def withAutoInc = clientId ~ executorId ~ taskId returning requestId
-  def onlyRequired = requestId ~ clientId ~ executorId ~ taskId
   def pk = primaryKey("requests_pkey", (requestId))
   def fkRequestsClients = foreignKey("fk_requests_clients", (clientId), Contacts)(t => (t.contactId))
   def fkRequestsTasks = foreignKey("fk_requests_tasks", (taskId), Tasks)(t => (t.taskId))

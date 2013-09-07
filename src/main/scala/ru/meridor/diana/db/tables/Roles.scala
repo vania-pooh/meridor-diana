@@ -6,13 +6,12 @@ package ru.meridor.diana.db.tables
 import scala.slick.driver.PostgresDriver.simple._
 import java.sql.Timestamp
 
-object Roles extends Table[(Int, String, String)]("roles") {
+object Roles extends Table[(Int, String, Option[String])]("roles") {
   def roleId = column[Int]("role_id", O.NotNull, O.AutoInc)
   def roleName = column[String]("role_name", O.NotNull)
-  def displayName = column[String]("display_name")
+  def displayName = column[Option[String]]("display_name", O.Nullable)
   def * = roleId ~ roleName ~ displayName
   def withAutoInc = roleName ~ displayName returning roleId
-  def onlyRequired = roleId ~ roleName ~ displayName.?
   def pk = primaryKey("roles_pkey", (roleId))
   def rolesPkey = index("roles_pkey", (roleId), unique = true)
 }

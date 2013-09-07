@@ -13,7 +13,6 @@ object Contacts extends Table[(Long, Int, Int, Timestamp)]("contacts") {
   def created = column[Timestamp]("created", O.NotNull)
   def * = contactId ~ contactType ~ numRequests ~ created
   def withAutoInc = contactType ~ numRequests ~ created returning contactId
-  def onlyRequired = contactId ~ contactType ~ numRequests ~ created
   def pk = primaryKey("contacts_pkey", (contactId))
   def contactsPkey = index("contacts_pkey", (contactId), unique = true)
 }

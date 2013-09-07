@@ -6,13 +6,12 @@ package ru.meridor.diana.db.tables
 import scala.slick.driver.PostgresDriver.simple._
 import java.sql.Timestamp
 
-object TaskPriorities extends Table[(Int, String, String)]("task_priorities") {
+object TaskPriorities extends Table[(Int, String, Option[String])]("task_priorities") {
   def priorityId = column[Int]("priority_id", O.NotNull, O.AutoInc)
   def priorityName = column[String]("priority_name", O.NotNull)
-  def icon = column[String]("icon")
+  def icon = column[Option[String]]("icon", O.Nullable)
   def * = priorityId ~ priorityName ~ icon
   def withAutoInc = priorityName ~ icon returning priorityId
-  def onlyRequired = priorityId ~ priorityName ~ icon.?
   def pk = primaryKey("task_priorities_pkey", (priorityId))
   def taskPrioritiesPkey = index("task_priorities_pkey", (priorityId), unique = true)
 }

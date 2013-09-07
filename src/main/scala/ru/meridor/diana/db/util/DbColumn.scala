@@ -28,10 +28,10 @@ class DbColumn(
    * @return
    */
   def toSlickString(): String = "def " + underscoredToCamelCase(name, lcFirst = true) +
-    " = column[" + getJavaType + "]" +
+    " = column[" + (if (nullable) "Option[" + getJavaType + "]" else getJavaType) + "]" +
     "(" +
       "\"" + getDatabaseName + "\"" +
-      (if (nullable) "" else ", O.NotNull") +
+      (if (nullable) ", O.Nullable" else ", O.NotNull") +
       (if (autoIncrement) ", O.AutoInc" else "") +
 //TODO: implement default value support
 //        (if (defaultValue != null) ", O.Default[" + getJavaType + "](" + getValueEscapeSymbol(getJavaType) + defaultValue + getValueEscapeSymbol(getJavaType) + ")" else "") +

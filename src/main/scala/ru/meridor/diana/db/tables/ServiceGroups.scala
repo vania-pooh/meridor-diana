@@ -10,10 +10,9 @@ object ServiceGroups extends Table[(Int, String, Int, String)]("service_groups")
   def groupId = column[Int]("group_id", O.NotNull, O.AutoInc)
   def groupName = column[String]("group_name", O.NotNull)
   def sequence = column[Int]("sequence", O.NotNull)
-  def displayName = column[String]("display_name")
+  def displayName = column[String]("display_name", O.NotNull)
   def * = groupId ~ groupName ~ sequence ~ displayName
   def withAutoInc = groupName ~ sequence ~ displayName returning groupId
-  def onlyRequired = groupId ~ groupName ~ sequence ~ displayName.?
   def pk = primaryKey("service_groups_pkey", (groupId))
   def idxServiceGroupsGroupName = index("idx_service_groups_group_name", (groupName))
   def serviceGroupsPkey = index("service_groups_pkey", (groupId), unique = true)

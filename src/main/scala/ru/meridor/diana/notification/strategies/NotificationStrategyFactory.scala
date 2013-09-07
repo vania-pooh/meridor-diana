@@ -20,14 +20,14 @@ object NotificationStrategyFactory {
    * @return
    */
   def get(notification: Notification): NotificationStrategy[Notification] =
-    notificationStrategies.get(notification.getType()).getOrElse(instanciateNotificationStrategy(notification))
+    notificationStrategies.get(notification.getType).getOrElse(instanciateNotificationStrategy(notification))
 
   private def instanciateNotificationStrategy(notification: Notification): NotificationStrategy[Notification] = {
-    val strategy = notification.getType() match  {
+    val strategy = notification.getType match  {
       case SMS => new SMSStrategy()
     }
 
-    notificationStrategies += notification.getType() -> strategy
+    notificationStrategies += notification.getType -> strategy
     strategy
   }
 }
