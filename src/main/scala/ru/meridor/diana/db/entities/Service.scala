@@ -55,7 +55,7 @@ object Service{
         u <- s.fkServicesUnits
         g <- s.fkServicesServiceGroups if g.groupName inSetBind groupNames
       } yield (s.serviceId, s.serviceName, s.price, u.unitId, u.displayName, g.groupId, g.groupName, g.displayName, g.sequence)
-      val records = rawRecords.list
+      val records = rawRecords.sortBy(_._2.asc).list
       if (records.size > 0){
         val map = scala.collection.mutable.Map[ServiceGroup, List[Service]]()
         val services = records map (r => new Service(r))
