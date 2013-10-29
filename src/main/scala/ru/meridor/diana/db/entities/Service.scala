@@ -8,8 +8,10 @@ import scala.slick.session.Database.threadLocalSession
 /**
  * Encapsulates service group
  */
-case class ServiceGroup(id: Int, name: String, displayName: String, sequence: Int, parentGroup: Option[ServiceGroup]){
+case class ServiceGroup(id: Int, name: String, displayName: String, sequence: Int, parentGroup: Option[ServiceGroup]) extends Ordered[ServiceGroup]{
   def getChildGroups = ServiceGroup.getByParentGroup(Some(this))
+
+  def compare(that: ServiceGroup): Int = displayName.compareTo(that.displayName)
 }
 
 object ServiceGroup {
@@ -129,6 +131,7 @@ object Service{
   }
 
   def getByGroups(groupNames: List[String]): Map[ServiceGroup, ServiceGroupContents] = {
+    import scala.collection.immutable.TreeMap
     if (groupNames.size > 0){
       DB withSession {
         val rawRecords = for {
@@ -137,7 +140,7 @@ object Service{
         } yield (s.serviceId, s.serviceName, s.price, s.unitId, s.groupId)
         val records = rawRecords.sortBy(_._2.asc).list
         if (records.size > 0){
-          val map = scala.collection.mutable.LinkedHashMap[ServiceGroup, ServiceGroupContents]()
+          val map = scala.collection.mutable.Map[ServiceGroup, ServiceGroupContents]()
           val services = records map (r => new Service(r))
           val groups = services.map(r => r.group).distinct
           for (group <- groups){
@@ -145,7 +148,7 @@ object Service{
             val childGroupNames = group.getChildGroups map (_.name)
             map += (group -> ServiceGroupContents(getByGroups(childGroupNames), groupServices))
           }
-          map.toMap[ServiceGroup, ServiceGroupContents]
+          TreeMap[ServiceGroup, ServiceGroupContents](map.toSeq:_*)
         } else Map[ServiceGroup, ServiceGroupContents]()
       }
     } else Map[ServiceGroup, ServiceGroupContents]()
