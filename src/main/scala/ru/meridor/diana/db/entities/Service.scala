@@ -142,7 +142,7 @@ object Service{
         if (records.size > 0){
           val map = scala.collection.mutable.Map[ServiceGroup, ServiceGroupContents]()
           val services = records map (r => new Service(r))
-          val groups = services.map(r => r.group).distinct
+          val groups = (groupNames map(g => ServiceGroup.getByName(g))).flatten
           for (group <- groups){
             val groupServices = services filter (_.group == group)
             val childGroupNames = group.getChildGroups map (_.name)
