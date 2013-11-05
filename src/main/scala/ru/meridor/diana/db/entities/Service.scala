@@ -139,17 +139,17 @@ object Service{
           g <- s.fkServicesServiceGroups if g.groupName inSetBind groupNames
         } yield (s.serviceId, s.serviceName, s.price, s.unitId, s.groupId)
         val records = rawRecords.sortBy(_._2.asc).list
-        if (records.size > 0){
-          val map = scala.collection.mutable.Map[ServiceGroup, ServiceGroupContents]()
-          val services = records map (r => new Service(r))
-          val groups = (groupNames map(g => ServiceGroup.getByName(g))).flatten
-          for (group <- groups){
-            val groupServices = services filter (_.group == group)
-            val childGroupNames = group.getChildGroups map (_.name)
-            map += (group -> ServiceGroupContents(getByGroups(childGroupNames), groupServices))
-          }
-          TreeMap[ServiceGroup, ServiceGroupContents](map.toSeq:_*)
-        } else Map[ServiceGroup, ServiceGroupContents]()
+        val services = if (records.size > 0)
+          records map (r => new Service(r))
+          else List[Service]()
+        val map = scala.collection.mutable.Map[ServiceGroup, ServiceGroupContents]()
+        val groups = (groupNames map(g => ServiceGroup.getByName(g))).flatten
+        for (group <- groups){
+          val groupServices = services filter (_.group == group)
+          val childGroupNames = group.getChildGroups map (_.name)
+          map += (group -> ServiceGroupContents(getByGroups(childGroupNames), groupServices))
+        }
+        TreeMap[ServiceGroup, ServiceGroupContents](map.toSeq:_*)
       }
     } else Map[ServiceGroup, ServiceGroupContents]()
   }
