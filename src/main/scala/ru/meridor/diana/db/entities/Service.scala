@@ -112,11 +112,45 @@ case class Service(id: Long, displayName: String, price: Double, unitOfMeasure: 
     )
 }
 
-case class ServiceGroupContents(childGroupsData: Map[ServiceGroup, ServiceGroupContents], services: List[Service])
+case class ServiceGroupContents(childGroupsData: Map[ServiceGroup, ServiceGroupContents], services: List[Service]){
 
-//TODO: find the way to parametrize Slick queries because data retrieval logic is the same for all queries
+  def ++(serviceGroupContents: ServiceGroupContents) = new ServiceGroupContents(
+    childGroupsData ++ serviceGroupContents.childGroupsData,
+    services ::: serviceGroupContents.services ::: Nil
+  )
+
+  def shuffle: ServiceGroupContents = {
+    val shuffledChildGroupsData = childGroupsData map { entry => entry._1 -> entry._2.shuffle }
+    val shuffledServices = scala.util.Random.shuffle(services)
+    new ServiceGroupContents(shuffledChildGroupsData, shuffledServices)
+  }
+
+  /**
+   * Takes n elements from services section
+   * @param n
+   * @return
+   */
+  def take(n: Int) = new ServiceGroupContents(Service.empty, services.take(n))
+
+  /**
+   * Flattens services from all child groups to the top level
+   * @return
+   */
+  def flatten: ServiceGroupContents = new ServiceGroupContents(
+    Service.empty,
+    (childGroupsData flatMap { entry => entry._2.flatten.services}).toList ::: services ::: Nil
+  )
+}
+
+object ServiceGroupContents {
+
+  def empty = new ServiceGroupContents(Service.empty, List[Service]())
+
+}
+
+//TODO: find the way to parameterize Slick queries because data retrieval logic is the same for all queries
 object Service{
-
+  
   def getById(id: Long): Option[Service] = {
     DB withSession {
       val rawRecords = for {
@@ -151,12 +185,24 @@ object Service{
         }
         TreeMap[ServiceGroup, ServiceGroupContents](map.toSeq:_*)
       }
-    } else Map[ServiceGroup, ServiceGroupContents]()
+    } else empty
   }
+
+  /**
+   * Returns randomized services data taking no more than limit entries per group
+   * @param groupNames
+   * @param limit
+   * @return
+   */
+  def getRandom(groupNames: List[String], limit: Int): Map[ServiceGroup, ServiceGroupContents] =
+    if (limit > 0) {
+      val randomizedServices = getByGroups(groupNames) map (entry => entry._1 -> entry._2.flatten.shuffle)
+      randomizedServices map (entry => entry._1 -> entry._2.take(limit))
+    } else Service.empty
 
   def getByGroup(groupName: String): ServiceGroupContents = {
     val map = getByGroups(List(groupName))
-    if (map.size > 0) map(map.head._1) else emptyServiceGroupContents
+    if (map.size > 0) map(map.head._1) else ServiceGroupContents.empty
   }
 
   def getByUnitOfMeasure(unitOfMeasure: UnitOfMeasure): List[Service] = {
@@ -172,6 +218,21 @@ object Service{
     Nil
   }
 
-  private def emptyServiceGroupContents = ServiceGroupContents(Map[ServiceGroup, ServiceGroupContents](), List[Service]())
+  /**
+   * Merges all input services data to the single services data with service group name = outputServiceGroupName
+   * @param outputServiceGroupName
+   * @param servicesData
+   * @return
+   */
+  def merge(outputServiceGroupName: String, servicesData: Map[ServiceGroup, ServiceGroupContents]*): Map[ServiceGroup, ServiceGroupContents] = ServiceGroup.getByName(outputServiceGroupName) match {
+    case Some(serviceGroup) => {
+      val allServiceGroupContents: List[ServiceGroupContents] = List(servicesData:_*) flatMap (sd => sd map (_._2))
+      val mergedServiceGroupContents: ServiceGroupContents = (allServiceGroupContents.tail foldLeft allServiceGroupContents.head)(_ ++ _)
+      Map(serviceGroup -> mergedServiceGroupContents)
+    }
+    case None => Service.empty
+  }
+
+  def empty = Map[ServiceGroup, ServiceGroupContents]()
 
 }
