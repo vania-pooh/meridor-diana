@@ -10,7 +10,7 @@ object DianaBuild extends Build {
   val Name = "Diana"
   val Version = "0.1.0"
   val ScalaVersion = "2.10.0"
-  val ScalatraVersion = "2.2.0"
+  val ScalatraVersion = "2.2.2"
 
   lazy val project = Project (
     "diana",
@@ -25,8 +25,8 @@ object DianaBuild extends Build {
         "org.scalatra" %% "scalatra" % ScalatraVersion,
         "org.scalatra" %% "scalatra-scalate" % ScalatraVersion,
         "org.scalatra" %% "scalatra-specs2" % ScalatraVersion % "test",
-        "org.scalatra" %% "scalatra-auth" % "2.2.1",
-        "org.scalatra" %% "scalatra-json" % "2.2.1",
+        "org.scalatra" %% "scalatra-auth" % ScalatraVersion,
+        "org.scalatra" %% "scalatra-json" % ScalatraVersion,
         "org.json4s"   %% "json4s-jackson" % "3.2.4",
         "ch.qos.logback" % "logback-classic" % "1.0.0" % "runtime",
         "org.eclipse.jetty" % "jetty-webapp" % "8.1.8.v20121106" % "container",
