@@ -20,6 +20,7 @@ object DianaBuild extends Build {
       name := Name,
       version := Version,
       scalaVersion := ScalaVersion,
+      scalacOptions ++= Seq("-feature", "-deprecation"),
       resolvers += Classpaths.typesafeReleases,
       libraryDependencies ++= Seq(
         "org.scalatra" %% "scalatra" % ScalatraVersion,
@@ -29,7 +30,7 @@ object DianaBuild extends Build {
         "org.scalatra" %% "scalatra-json" % ScalatraVersion,
         "org.json4s"   %% "json4s-jackson" % "3.2.4",
         "ch.qos.logback" % "logback-classic" % "1.0.0" % "runtime",
-        "org.eclipse.jetty" % "jetty-webapp" % "8.1.8.v20121106" % "container",
+        "org.eclipse.jetty" % "jetty-webapp" % "9.1.0.v20131115" % "container",
         "org.eclipse.jetty.orbit" % "javax.servlet" % "3.0.0.v201112011016" % "container;provided;test" artifacts (Artifact("javax.servlet", "jar", "jar")),
         "com.jolbox" % "bonecp" % "0.7.1.RELEASE",
         "com.typesafe.slick" % "slick_2.10" % "1.0.0",
@@ -37,7 +38,8 @@ object DianaBuild extends Build {
         "postgresql" % "postgresql" % "9.1-901-1.jdbc4",
         "org.apache.commons" % "commons-io" % "1.3.2",
         "org.apache.commons" % "commons-lang3" % "3.1",
-        "org.apache.httpcomponents" % "httpclient" % "4.2.5"
+        "org.apache.httpcomponents" % "httpclient" % "4.2.5",
+        "org.apache.pdfbox" % "pdfbox" % "1.8.3"
       ),
       scalateTemplateConfig in Compile <<= (sourceDirectory in Compile){ base =>
         Seq(
