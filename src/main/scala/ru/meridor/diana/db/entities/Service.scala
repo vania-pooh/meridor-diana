@@ -4,14 +4,22 @@ import ru.meridor.diana.db.DB
 import ru.meridor.diana.db.tables.{Units, ServiceGroups, Services}
 import scala.slick.driver.PostgresDriver.simple._
 import scala.slick.session.Database.threadLocalSession
+import scala.collection.mutable
 
 /**
  * Encapsulates service group
  */
 case class ServiceGroup(id: Int, name: String, displayName: String, sequence: Int, parentGroup: Option[ServiceGroup]) extends Ordered[ServiceGroup]{
+
   def getChildGroups = ServiceGroup.getByParentGroup(Some(this))
 
   def compare(that: ServiceGroup): Int = displayName.compareTo(that.displayName)
+
+  override def hashCode() = toString.hashCode()
+
+  override def equals(obj: scala.Any) = obj.isInstanceOf[ServiceGroup] && obj.asInstanceOf[ServiceGroup].id.equals(id)
+
+  override def toString = "ServiceGroup(" + id + ", " + displayName + ")"
 }
 
 object ServiceGroup {
@@ -77,7 +85,13 @@ object ServiceGroup {
 /**
  * Encapsulates a single unit of measure, like meters, barrels, inches, etc.
  */
-case class UnitOfMeasure(id: Int, displayName: String)
+case class UnitOfMeasure(id: Int, displayName: String){
+
+  override def hashCode() = toString.hashCode
+
+  override def toString = "UnitOfMeasure(" + id + ", " + displayName + ")"
+
+}
 
 object UnitOfMeasure {
 
@@ -112,7 +126,9 @@ case class Service(id: Long, displayName: String, price: Double, unitOfMeasure: 
     )
 }
 
-case class ServiceGroupContents(childGroupsData: Map[ServiceGroup, ServiceGroupContents], services: List[Service]){
+case class ServiceGroupContents(childGroupsData: ServicesData, services: List[Service]) extends Iterable[Service]{
+
+  private lazy val list = toList
 
   def ++(serviceGroupContents: ServiceGroupContents) = new ServiceGroupContents(
     childGroupsData ++ serviceGroupContents.childGroupsData,
@@ -130,21 +146,34 @@ case class ServiceGroupContents(childGroupsData: Map[ServiceGroup, ServiceGroupC
    * @param n
    * @return
    */
-  def take(n: Int) = new ServiceGroupContents(Service.empty, services.take(n))
+  override def take(n: Int) = new ServiceGroupContents(ServicesData.empty, services.take(n))
 
   /**
    * Flattens services from all child groups to the top level
    * @return
    */
   def flatten: ServiceGroupContents = new ServiceGroupContents(
-    Service.empty,
+    ServicesData.empty,
     (childGroupsData flatMap { entry => entry._2.flatten.services}).toList ::: services ::: Nil
   )
+
+  def iterator = list.iterator
+
+  override def toList: List[Service] = {
+    val ret = scala.collection.mutable.ArrayBuffer[Service]()
+    childGroupsData foreach {
+      el => ret ++= el._2.toList
+    }
+    ret ++= services
+    ret.toList
+  }
+
+  override def toString() = "ServiceGroupContents(" + childGroupsData + ", " + services + ")"
 }
 
 object ServiceGroupContents {
 
-  def empty = new ServiceGroupContents(Service.empty, List[Service]())
+  def empty = new ServiceGroupContents(ServicesData.empty, List[Service]())
 
 }
 
@@ -152,19 +181,25 @@ object ServiceGroupContents {
 object Service{
   
   def getById(id: Long): Option[Service] = {
+    val services = getByIds(List(id))
+    if (services.length > 0)
+      Some(services(0))
+      else None
+  }
+
+  def getByIds(ids: List[Long]): List[Service] = {
     DB withSession {
       val rawRecords = for {
-        s <- Services if s.serviceId === id
+        s <- Services if s.serviceId inSetBind ids
       } yield (s.serviceId, s.serviceName, s.price, s.unitId, s.groupId)
       val records = rawRecords.list
       if (records.size > 0)
-        Some(new Service(records(0)))
-        else None
+        records map (r => new Service(r))
+        else List[Service]()
     }
-    None
   }
 
-  def getByGroups(groupNames: List[String]): Map[ServiceGroup, ServiceGroupContents] = {
+  def getByGroups(groupNames: List[String]): ServicesData = {
     import scala.collection.immutable.TreeMap
     if (groupNames.size > 0){
       DB withSession {
@@ -185,7 +220,7 @@ object Service{
         }
         TreeMap[ServiceGroup, ServiceGroupContents](map.toSeq:_*)
       }
-    } else empty
+    } else ServicesData.empty
   }
 
   /**
@@ -194,14 +229,17 @@ object Service{
    * @param limit
    * @return
    */
-  def getRandom(groupNames: List[String], limit: Int): Map[ServiceGroup, ServiceGroupContents] =
+  def getRandom(groupNames: List[String], limit: Int): ServicesData =
     if (limit > 0) {
-      val randomizedServices = getByGroups(groupNames) map (entry => entry._1 -> entry._2.flatten.shuffle)
+      val randomizedServices: Map[ServiceGroup, ServiceGroupContents] =
+        getByGroups(groupNames) map {
+          entry => entry._1 -> entry._2.flatten.shuffle
+        }
       randomizedServices map (entry => entry._1 -> entry._2.take(limit))
-    } else Service.empty
+    } else ServicesData.empty
 
   def getByGroup(groupName: String): ServiceGroupContents = {
-    val map = getByGroups(List(groupName))
+    val map: Map[ServiceGroup, ServiceGroupContents] = getByGroups(List(groupName))
     if (map.size > 0) map(map.head._1) else ServiceGroupContents.empty
   }
 
@@ -215,7 +253,6 @@ object Service{
         records.map(r => new Service(r))
         else Nil
     }
-    Nil
   }
 
   /**
@@ -224,15 +261,56 @@ object Service{
    * @param servicesData
    * @return
    */
-  def merge(outputServiceGroupName: String, servicesData: Map[ServiceGroup, ServiceGroupContents]*): Map[ServiceGroup, ServiceGroupContents] = ServiceGroup.getByName(outputServiceGroupName) match {
+  def merge(outputServiceGroupName: String, servicesData: ServicesData*): ServicesData = ServiceGroup.getByName(outputServiceGroupName) match {
     case Some(serviceGroup) => {
       val allServiceGroupContents: List[ServiceGroupContents] = List(servicesData:_*) flatMap (sd => sd map (_._2))
       val mergedServiceGroupContents: ServiceGroupContents = (allServiceGroupContents.tail foldLeft allServiceGroupContents.head)(_ ++ _)
       Map(serviceGroup -> mergedServiceGroupContents)
     }
-    case None => Service.empty
+    case None => ServicesData.empty
   }
 
+}
+
+object ServicesData {
+
   def empty = Map[ServiceGroup, ServiceGroupContents]()
+
+  def fromList(services: List[Service], parentGroups: List[ServiceGroup] = ServiceGroup.topGroups): ServicesData = {
+    //Group service by their service group
+    val servicesByGroup = mutable.HashMap[ServiceGroup, mutable.ArrayBuffer[Service]]()
+    services foreach {
+      service => {
+        val group = service.group
+        if (servicesByGroup.contains(group))
+          servicesByGroup(group) += service
+          else servicesByGroup += group -> mutable.ArrayBuffer(service)
+      }
+    }
+
+    //Build recursive structure
+    val ret = mutable.HashMap[ServiceGroup, ServiceGroupContents]()
+    parentGroups foreach {
+      gr => {
+        val ownServices = if (servicesByGroup.contains(gr)) servicesByGroup(gr).toList else List[Service]()
+        val childGroups = gr.getChildGroups
+        val childServices = mutable.ArrayBuffer[Service]()
+        childGroups foreach {
+          cg => if (servicesByGroup.contains(cg)){
+            childServices ++= servicesByGroup(cg)
+          }
+        }
+
+        val childGroupContents = if ( (childGroups.length > 0) && (childServices.length > 0) )
+          fromList(childServices.toList, childGroups)
+          else empty
+        if ( (childGroupContents.size > 0) || (ownServices.length > 0) ){
+          ret += gr -> ServiceGroupContents(childGroupContents, ownServices)
+        }
+      }
+    }
+    ret.toMap
+
+  }
 
 }
