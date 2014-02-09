@@ -6,9 +6,7 @@ import java.util.Properties
  * Gives a simple interface to *.properties file
  */
 trait PropertiesFileSupport {
-  /**
-   * Stores SMS notification properties
-   */
+
   private lazy val properties: Option[Properties] = {
     val props = new Properties
     try{
@@ -22,6 +20,11 @@ trait PropertiesFileSupport {
     }
   }
 
+  /**
+   * Name of the file to use. For files from resources folder it's recommended to use / prefix,
+   * e.g. "/somefile" instead of "somefile".
+   * @return
+   */
   protected def propertiesFileName: String
 
   protected def getProperty(name: String): Option[String] = {
@@ -32,6 +35,11 @@ trait PropertiesFileSupport {
 
       case None => None
     }
+  }
+
+  protected def getPropertyOrEmptyString(name: String): String = getProperty(name) match {
+    case Some(str) => str
+    case None => ""
   }
 
 }

@@ -15,7 +15,7 @@ trait CamelCaseSupport {
     for (part <- s.split("_")) {
       camelCaseString.append(toProperCase(part))
     }
-    return if (lcFirst)
+    if (lcFirst)
       Character.toLowerCase(camelCaseString.charAt(0)) + (if (camelCaseString.length > 1) camelCaseString.substring(1) else "")
       else camelCaseString.toString()
   }
@@ -36,10 +36,13 @@ trait CamelCaseSupport {
       ret += part.toUpperCase
       partNumber += 1
     }
-    return ret
+    ret
   }
 
-  protected def toProperCase(s: String): String = {
-    return s.substring(0, 1).toUpperCase + s.substring(1).toLowerCase
-  }
+  /**
+   * Converts somestring to Somestring
+   * @param s
+   * @return
+   */
+  protected def toProperCase(s: String): String = s.substring(0, 1).toUpperCase + s.substring(1).toLowerCase
 }

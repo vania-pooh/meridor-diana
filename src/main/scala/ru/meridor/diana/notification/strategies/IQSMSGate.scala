@@ -43,11 +43,6 @@ class IQSMSGate extends JSONPostRequestSupport with PropertiesFileSupport {
   private def getLogin: String = getPropertyOrEmptyString("sms.login")
   private def getPassword: String = getPropertyOrEmptyString("sms.password")
 
-  private def getPropertyOrEmptyString(name: String): String = getProperty(name) match {
-    case Some(str) => str
-    case None => ""
-  }
-
   private def canProcessRequests: Boolean = (getBaseUrl.size > 0) && (getLogin.size > 0) && (getPassword.size > 0)
 
   private def getUrl(uri: String): String = getBaseUrl + uri + ".json"

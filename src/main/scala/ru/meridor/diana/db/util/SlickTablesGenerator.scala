@@ -26,8 +26,8 @@ object SlickTablesGenerator extends App with DatabaseMetadataSupport with FileGe
       val indexes = tableMetadata._2._4
       val table = new DbTable(tableName, columns, primaryKey, foreignKeys, indexes)
       println("\tGenerating table " + tableName + "...")
-      reset
-      appendInfoHeader
+      reset()
+      appendInfoHeader()
       appendImportStatements()
       append(table.toSlickString())
       writeToFile(outputDirectory, underscoredToCamelCase(tableName) + ".scala")
