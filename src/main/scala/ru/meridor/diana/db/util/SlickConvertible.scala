@@ -2,7 +2,6 @@ package ru.meridor.diana.db.util
 
 import java.sql.Types
 import ru.meridor.diana.util.CamelCaseSupport
-import org.apache.commons.lang3.StringUtils
 
 /**
  * A trait to be used to convert JDBC metadata to Slick definition strings
@@ -12,7 +11,7 @@ trait SlickConvertible extends CamelCaseSupport {
    * Returns a slick table definition string
    * @return
    */
-  def toSlickString(): String
+  def toSlickString: String
 
   /**
    * @see <a href="http://dev.mysql.com/doc/refman/5.1/en/connector-j-reference-type-conversions.html">Table 21.25. MySQL Types to Java Types</a>

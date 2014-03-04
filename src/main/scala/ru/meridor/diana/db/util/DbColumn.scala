@@ -27,7 +27,7 @@ class DbColumn(
    * Returns a slick table definition string
    * @return
    */
-  def toSlickString(): String = "def " + underscoredToCamelCase(name, lcFirst = true) +
+  def toSlickString: String = "def " + underscoredToCamelCase(name, lcFirst = true) +
     " = column[" + (if (nullable) "Option[" + getJavaType + "]" else getJavaType) + "]" +
     "(" +
       "\"" + getDatabaseName + "\"" +

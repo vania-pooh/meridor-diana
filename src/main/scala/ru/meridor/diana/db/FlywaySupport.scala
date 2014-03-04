@@ -43,6 +43,6 @@ trait FlywaySupport extends ConnectionPoolerSupport with LoggingSupport {
 	  val alreadyApplied = flyway.info().applied().size
 	  val needToApply = flyway.info().pending().size
 	  logger.info("Database state: previously applied " + alreadyApplied + " migrations, need to apply " + needToApply + " migrations.")
-    return (needToApply > 0)
+    needToApply > 0
 	}
 }

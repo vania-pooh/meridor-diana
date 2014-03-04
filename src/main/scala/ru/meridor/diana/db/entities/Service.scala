@@ -28,7 +28,7 @@ object ServiceGroup {
   private val groupNameHashTable = scala.collection.mutable.LinkedHashMap[String, ServiceGroup]()
   private val parentGroupHashTable = scala.collection.mutable.LinkedHashMap[Option[ServiceGroup], scala.collection.mutable.LinkedList[ServiceGroup]]()
 
-  lazy val topGroups = loadServiceGroups
+  val topGroups = loadServiceGroups
 
   private type ServiceGroupRecord = (Int, String, String, Int, Option[Int])
 
@@ -95,7 +95,7 @@ case class UnitOfMeasure(id: Int, displayName: String){
 
 object UnitOfMeasure {
 
-  private val searchHashTable = loadUnitsOfMeasure
+  private lazy val searchHashTable = loadUnitsOfMeasure
 
   private def loadUnitsOfMeasure: Map[Int, UnitOfMeasure] = {
     DB withSession {
@@ -114,15 +114,16 @@ object UnitOfMeasure {
 /**
  * A single service (i.e. named action with unit of measure and price)
  */
-case class Service(id: Long, displayName: String, price: Double, unitOfMeasure: UnitOfMeasure, group: ServiceGroup){
+case class Service(id: Long, displayName: String, price: Double, unitOfMeasure: UnitOfMeasure, group: ServiceGroup, quantity: Float = 0f){
 
-  def this(data: (Long, String, Double, Int, Int)) =
+  def this(data: (Long, String, Double, Int, Int), quantity: Float = 0f) =
     this(
       data._1,
       data._2,
       data._3,
       UnitOfMeasure.getById(data._4),
-      ServiceGroup.getById(data._5)
+      ServiceGroup.getById(data._5),
+      quantity
     )
 }
 
@@ -187,19 +188,23 @@ object Service{
       else None
   }
 
-  def getByIds(ids: List[Long]): List[Service] = {
+  def getByIds(ids: List[Long], quantities: Map[Long, Float] = Map()): List[Service] = {
     DB withSession {
       val rawRecords = for {
         s <- Services if s.serviceId inSetBind ids
       } yield (s.serviceId, s.serviceName, s.price, s.unitId, s.groupId)
       val records = rawRecords.list
-      if (records.size > 0)
-        records map (r => new Service(r))
-        else List[Service]()
+      if (records.size > 0){
+        val sortedRecords = scala.util.Sorting.stableSort(
+          records,
+          {r1: (Long, String, Double, Int, Int) => ids.indexOf(r1._1)}
+        )
+        servicesWithQuantities(sortedRecords, quantities)
+      } else List[Service]()
     }
   }
 
-  def getByGroups(groupNames: List[String]): ServicesData = {
+  def getByGroups(groupNames: List[String], quantities: Map[Long, Float] = Map()): ServicesData = {
     import scala.collection.immutable.TreeMap
     if (groupNames.size > 0){
       DB withSession {
@@ -209,7 +214,7 @@ object Service{
         } yield (s.serviceId, s.serviceName, s.price, s.unitId, s.groupId)
         val records = rawRecords.sortBy(_._2.asc).list
         val services = if (records.size > 0)
-          records map (r => new Service(r))
+          servicesWithQuantities(records, quantities)
           else List[Service]()
         val map = scala.collection.mutable.Map[ServiceGroup, ServiceGroupContents]()
         val groups = (groupNames map(g => ServiceGroup.getByName(g))).flatten
@@ -222,6 +227,16 @@ object Service{
       }
     } else ServicesData.empty
   }
+
+  private def servicesWithQuantities(records: Seq[(Long, String, Double, Int, Int)], quantities: Map[Long, Float]): List[Service] = (records map {
+    r => {
+      val serviceId = r._1
+      quantities.get(serviceId) match {
+        case Some(quantity) => new Service(r, quantity)
+        case None => new Service(r)
+      }
+    }
+  }).toList
 
   /**
    * Returns randomized services data taking no more than limit entries per group
@@ -241,18 +256,6 @@ object Service{
   def getByGroup(groupName: String): ServiceGroupContents = {
     val map: Map[ServiceGroup, ServiceGroupContents] = getByGroups(List(groupName))
     if (map.size > 0) map(map.head._1) else ServiceGroupContents.empty
-  }
-
-  def getByUnitOfMeasure(unitOfMeasure: UnitOfMeasure): List[Service] = {
-    DB withSession {
-      val rawRecords = for {
-        s <- Services if s.unitId === unitOfMeasure.id
-      } yield (s.serviceId, s.serviceName, s.price, s.unitId, s.groupId)
-      val records = rawRecords.list
-      if (records.size > 0)
-        records.map(r => new Service(r))
-        else Nil
-    }
   }
 
   /**

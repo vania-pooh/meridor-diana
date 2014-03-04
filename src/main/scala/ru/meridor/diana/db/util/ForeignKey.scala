@@ -8,9 +8,8 @@ class ForeignKey (name: String, fromTableColumns: List[String], toTable: String,
    * Returns a slick table definition string
    * @return
    */
-  def toSlickString(): String = {
-    return "def " + underscoredToCamelCase(name, true) +
-      " = foreignKey(\"" + name + "\", (" + fromTableColumns.map(tableName => underscoredToCamelCase(tableName, true)).mkString(", ")+ "), " +
-      underscoredToCamelCase(toTable) + ")(t => (t." + toTableColumns.map(tableName => underscoredToCamelCase(tableName, true)).mkString(", t.") + "))"
-  }
+  def toSlickString: String =
+      "def " + underscoredToCamelCase(name, lcFirst = true) +
+      " = foreignKey(\"" + name + "\", (" + fromTableColumns.map(tableName => underscoredToCamelCase(tableName, lcFirst = true)).mkString(", ")+ "), " +
+      underscoredToCamelCase(toTable) + ")(t => (t." + toTableColumns.map(tableName => underscoredToCamelCase(tableName, lcFirst = true)).mkString(", t.") + "))"
 }

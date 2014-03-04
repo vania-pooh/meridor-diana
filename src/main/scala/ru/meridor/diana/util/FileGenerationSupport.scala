@@ -62,7 +62,7 @@ trait FileGenerationSupport {
   /**
    * Completely clears generator contents in order to generate a new file
    */
-  protected def reset(){
+  protected def reset() {
     classContents.setLength(0)
     indentsCount = 0
   }

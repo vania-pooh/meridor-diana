@@ -8,8 +8,8 @@ class Index (name: String, columns: List[String], unique: Boolean) extends Slick
    * Returns a slick table definition string
    * @return
    */
-  def toSlickString(): String = {
-    return "def " + underscoredToCamelCase(name, true) + " = index(\"" + name + "\", (" + columns.map(tableName => underscoredToCamelCase(tableName, true)).mkString(", ") + ")" +
+  def toSlickString: String = {
+    "def " + underscoredToCamelCase(name, lcFirst = true) + " = index(\"" + name + "\", (" + columns.map(tableName => underscoredToCamelCase(tableName, lcFirst = true)).mkString(", ") + ")" +
       (if (unique)  ", unique = true" else "") + ")"
   }
 }

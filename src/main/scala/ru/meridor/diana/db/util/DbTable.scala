@@ -7,21 +7,21 @@ import ru.meridor.diana.util.FileGenerationSupport
  */
 class DbTable (name: String, columns: List[DbColumn], primaryKey: PrimaryKey, foreignKeys: List[ForeignKey], indexes: List[Index]) extends SlickConvertible with FileGenerationSupport{
 
-  private var slickString: String = null;
+  private var slickString: String = null
 
   /**
    * Returns a slick table definition string
    * @return
    */
-  def toSlickString(): String = {
+  def toSlickString: String = {
     if (slickString == null){
-      appendln("object " + underscoredToCamelCase(name) + " extends Table[" + getRecordType() + "](\"" + name + "\") {")
-      indent
+      appendln("object " + underscoredToCamelCase(name) + " extends Table[" + getRecordType + "](\"" + name + "\") {")
+      indent()
       //Adding columns
       for (column <- columns){
-        appendln(column.toSlickString())
+        appendln(column.toSlickString)
       }
-      appendln(getWildcardRow())
+      appendln(getWildcardRow)
 
       val autoIncrementColumns = columns.filter(_.getAutoIncrement)
       if (autoIncrementColumns.length == 1){
@@ -31,50 +31,37 @@ class DbTable (name: String, columns: List[DbColumn], primaryKey: PrimaryKey, fo
 //      appendln(getOnlyRequiredHelperRow(columns))
 
       //Adding primary key
-      appendln(primaryKey.toSlickString())
+      appendln(primaryKey.toSlickString)
 
       //Adding foreign keys
       for (foreignKey <- foreignKeys){
-        appendln(foreignKey.toSlickString())
+        appendln(foreignKey.toSlickString)
       }
 
       //Adding indexes
       for (index <- indexes){
-        appendln(index.toSlickString())
+        appendln(index.toSlickString)
       }
-      outdent
+      outdent()
       appendln("}")
       slickString = getClassContents
     }
-    return slickString
+    slickString
   }
 
-  private def getRecordType(): String = {
-    return "(" + columns.map(
-      column =>
-        (if (column.getNullable) "Option[" + column.getJavaType + "]" else column.getJavaType)
+  private def getRecordType: String = {
+    "(" + columns.map(
+      column => if (column.getNullable)
+        "Option[" + column.getJavaType + "]"
+      else column.getJavaType
     ).mkString(", ") + ")"
   }
 
-  private def getWildcardRow(): String = {
-    return "def * = " + columns.mkString(" ~ ")
-  }
+  private def getWildcardRow: String = "def * = " + columns.mkString(" ~ ")
 
-  private def getAutoIncrementHelperRow(autoIncColumn: DbColumn, columns: List[DbColumn]): String = {
-    return "def withAutoInc = " +
+  private def getAutoIncrementHelperRow(autoIncColumn: DbColumn, columns: List[DbColumn]): String =
+      "def withAutoInc = " +
       columns.filter(!_.getAutoIncrement).mkString(" ~ ") +
       " returning " + autoIncColumn
-  }
-
-//  private def getOnlyRequiredHelperRow(columns: List[DbColumn]): String = {
-//    return "def onlyRequired = " +
-//    columns.map(
-//      c => c.getNullable match {
-//        case true => c + ".?"
-//        case false => c
-//      }
-//    )
-//    .mkString(" ~ ")
-//  }
 
 }

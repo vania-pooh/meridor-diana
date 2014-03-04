@@ -29,7 +29,7 @@ object SlickTablesGenerator extends App with DatabaseMetadataSupport with FileGe
       reset()
       appendInfoHeader()
       appendImportStatements()
-      append(table.toSlickString())
+      append(table.toSlickString)
       writeToFile(outputDirectory, underscoredToCamelCase(tableName) + ".scala")
     }
     ConnectionPooler.shutdown()
