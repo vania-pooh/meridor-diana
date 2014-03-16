@@ -40,6 +40,6 @@ trait Entity[T, I] {
    */
   def createOrUpdate(entity: T): Option[T] = exists(id(entity)) match {
     case None => create(entity)
-    case Some(entity) => update(entity)
+    case Some(e) => update(e)
   }
 }

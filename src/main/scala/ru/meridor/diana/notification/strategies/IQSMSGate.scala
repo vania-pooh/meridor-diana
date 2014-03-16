@@ -1,6 +1,6 @@
 package ru.meridor.diana.notification.strategies
 
-import java.util.{Date, Properties}
+import java.util.Date
 import ru.meridor.diana.util.{PropertiesFileSupport, JSONPostRequestSupport}
 import ru.meridor.diana.notification.entities.SMSNotification
 import org.joda.time.DateTime

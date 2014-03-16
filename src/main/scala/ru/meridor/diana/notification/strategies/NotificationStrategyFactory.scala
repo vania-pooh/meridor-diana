@@ -2,7 +2,6 @@ package ru.meridor.diana.notification.strategies
 
 import ru.meridor.diana.notification.NotificationType
 import NotificationType._
-import scala.collection.mutable.Map
 import ru.meridor.diana.notification.entities.Notification
 
 /**
@@ -12,7 +11,7 @@ object NotificationStrategyFactory {
   /**
    * Stores already instantiated strategies
    */
-  private val notificationStrategies = Map[NotificationType, NotificationStrategy[Notification]]()
+  private val notificationStrategies = scala.collection.mutable.HashMap[NotificationType, NotificationStrategy[Notification]]()
 
   /**
    * Returns corresponding notification strategy by notification
