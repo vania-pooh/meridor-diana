@@ -15,16 +15,20 @@ case class News(date: Timestamp, markdown: String){
 object News {
 
   /**
-   * Returns all news in the table
+   * Returns all or some last news in the table
    * @return
    */
-  def get: List[News] = {
+  def get(limit: Option[Int] = None): List[News] = {
     DB withSession {
       val arr = scala.collection.mutable.ArrayBuffer[News]()
       val rawRecords = for {
         n <- ru.meridor.diana.db.tables.News
       } yield (n.date, n.markdown)
-      rawRecords.sortBy(_._1.desc).list foreach {
+      val records = limit match {
+        case Some(l) => rawRecords.sortBy(_._1.desc).take(l).list
+        case None => rawRecords.sortBy(_._1.desc).list
+      }
+      records foreach {
         r => arr += new News(r)
       }
       arr.toList
