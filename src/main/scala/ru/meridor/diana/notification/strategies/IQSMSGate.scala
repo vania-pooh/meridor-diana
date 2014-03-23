@@ -2,7 +2,7 @@ package ru.meridor.diana.notification.strategies
 
 import java.util.Date
 import ru.meridor.diana.util.{PropertiesFileSupport, JSONPostRequestSupport}
-import ru.meridor.diana.notification.entities.SMSNotification
+import ru.meridor.diana.notification.entities.{LowFundsEvent, SMSNotification}
 import org.joda.time.DateTime
 
 /**
@@ -42,6 +42,10 @@ class IQSMSGate extends JSONPostRequestSupport with PropertiesFileSupport {
   private def getBaseUrl: String = getPropertyOrEmptyString("sms.url")
   private def getLogin: String = getPropertyOrEmptyString("sms.login")
   private def getPassword: String = getPropertyOrEmptyString("sms.password")
+  private def getLowFundsThreshold: Double = getProperty("sms.lowFundsThreshold") match {
+    case Some(threshold) => threshold.asInstanceOf[Double]
+    case None => 100 * SMS_MAX_PRICE
+  }
 
   private def canProcessRequests: Boolean = (getBaseUrl.size > 0) && (getLogin.size > 0) && (getPassword.size > 0)
 
@@ -94,7 +98,14 @@ class IQSMSGate extends JSONPostRequestSupport with PropertiesFileSupport {
       val response = sendRequest(getUrl("send"), requestParameters.toMap[String, Any])
       if (isRequestSuccessful(response)){
           response.get("messages") match {
-            case Some(processedMessages) => classifyProcessedMessages(messages, processedMessages.asInstanceOf[List[Map[String, Any]]])
+            case Some(processedMessages) => {
+              val balance = getBalance
+              val messagesWithLowFundsEvent = messages filter (_.supportsLowFundsEvent)
+              if (shouldSendLowFundsMessage(balance) && messagesWithLowFundsEvent.length > 0){
+                messagesWithLowFundsEvent(0).raiseEvent(LowFundsEvent)(balance)
+              }
+              classifyProcessedMessages(messages, processedMessages.asInstanceOf[List[Map[String, Any]]])
+            }
             case None => allMessagesRejected(messages)
           }
       } else allMessagesRejected(messages)
@@ -153,10 +164,17 @@ class IQSMSGate extends JSONPostRequestSupport with PropertiesFileSupport {
   val SMS_MAX_PRICE = 0.5
 
   /**
-   * Returns whether we have enough money to send messages
+   * Returns whether we have enough money to send this message
    * @return
    */
-  def haveEnoughAccountMoney = getBalance > SMS_MAX_PRICE
+  def haveEnoughAccountMoney = getBalance > 2 * SMS_MAX_PRICE
+
+  /**
+   * Returns whether we have low money and need to send respective message
+   * When money amount becomes too small we need to even not send warning messages.
+   * @return
+   */
+  private def shouldSendLowFundsMessage(balance: Double) = (balance < getLowFundsThreshold) && (balance > 0.5 * getLowFundsThreshold)
 
   /**
    * Returns a list of available message senders
