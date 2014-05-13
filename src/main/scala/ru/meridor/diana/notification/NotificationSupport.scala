@@ -6,7 +6,7 @@ import ru.meridor.diana.notification.entities.Notification
 /**
  * A base interface for any notification subsystem. notify() is reserved name for java.lang.Object method.
  */
-object Notifier {
+trait NotificationSupport {
   /**
    * Notifies user about any events in the system
    * @param notification an object with notification information

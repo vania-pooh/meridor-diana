@@ -1,11 +1,11 @@
 package ru.meridor.diana.export
 
-import java.io.{OutputStreamWriter, BufferedWriter, InputStream, OutputStream}
+import java.io.{OutputStreamWriter, BufferedWriter}
 
 /**
  * An entry point to various export actions
  */
-object Exporter {
+trait ExportSupport {
 
   /**
    * Does export actions described by the job
